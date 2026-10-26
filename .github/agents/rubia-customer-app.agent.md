@@ -36,7 +36,7 @@ You are the specialist for the **Rubia Customer App**, a Flutter app (package `b
 - Backend errors are in `../rubia-backend-php/app/runtime/logs/app.log`; Google Distance Matrix/Routes may return REQUEST_DENIED (the fare still works).
 
 ## Testing the business flow
-1. Customer in the app: Get Started, login (phone, tick terms, OTP), profile and emergency contacts, Home, Drivers, one-way in-city, pick drop on the map, car type, date and time, estimate, Confirm Ride (booking status 1, ride OTP shown).
+1. Customer in the app (test customer: phone 9999900001, name **Veera**; test driver: 9985735241): Get Started, login (phone, tick terms, OTP), profile (name Veera) and emergency contacts, Home, Drivers, one-way in-city, vehicle first (Automatic/Manual and car), pick drop on the map, date and time, estimate, Confirm Ride (booking status 1, ride OTP shown; My Bookings opens).
 2. Driver through the API (`/api/driver/*`, `auth_code` from `verify-otp`): `driver-status` (status=1), `accept-ride`, `go-for-pickup`, `arrived-location` (with the ride `otp`), `start-ride`, `complete-ride`.
 3. Verify in the DB (`booking` status 7, one `driver_earnings` row) and in the app's Bookings, Completed tab.
 4. Drive the UI with `adb shell uiautomator dump` for coordinates and `adb shell input tap/text/keyevent`. Flutter text fields may need a tap and the keyboard dismissed with keyevent 4; lock portrait with `adb shell wm user-rotation lock 0` while testing and restore with `wm user-rotation free`.

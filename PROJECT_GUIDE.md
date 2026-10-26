@@ -187,8 +187,10 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
      certificate list, so calls to Google fail without it.
 3. **Phone:** `adb reverse tcp:8080 tcp:8080`, then build and install the app with
    `--dart-define=API_BASE_URL=http://localhost:8080/api`.
-4. **Customer in the app:** Get Started → phone number → tick the terms box → OTP → name and
-   email → emergency contacts (two numbers) → Home → Drivers → one-way, in-city → pick the drop
+4. **Customer in the app:** the test customer is **9999900001, named Veera** (code 1234 through the
+   dev test login above). Get Started → phone number → tick the terms box → OTP → name and
+   email (use **Veera** as the name when the account is new) → emergency contacts (two numbers) →
+   Home → Drivers → one-way, in-city → pick the drop
    on the map → Automatic, Sedan → Next → today/tomorrow and time → OK → estimate → Next →
    Confirm Ride. The booking shows "Waiting for Driver" with a 4-digit ride OTP.
 5. **Driver:** the Partner app was not used. The driver was played through its API
