@@ -19,7 +19,7 @@ import 'package:base_project_flutter/providers/themeProvider.dart';
 import 'package:base_project_flutter/responsive.dart';
 import 'package:base_project_flutter/views/EmergencyContact/EmergencyContacts.dart';
 import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
-import 'package:base_project_flutter/views/onBoardingpage/onBoardingPage.dart';
+import 'package:base_project_flutter/views/logiPage/loginPage.dart';
 import 'package:base_project_flutter/views/translation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:base_project_flutter/api_services/pushService.dart';
@@ -173,7 +173,7 @@ class _MyAppState extends State<MyApp> {
                 ),
                 splashIconSize: 400,
                 nextScreen: (widget.checkAuth == null || widget.checkAuth == '')
-                    ? OnboardingPage()
+                    ? LoginScreen()
                     : (widget.checkDetails == false)
                         ? BottomNavigation(
                             tabIndexId: 0, showRegistrationSheet: true)

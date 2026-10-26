@@ -1,10 +1,11 @@
 // =============================================================================
-// WHAT : First-time profile form: name, email. Shown as a bottom sheet on top
-//        of Home right after a brand-new customer verifies their OTP, chained
-//        into the referral-code and enable-location sheets that follow it.
-// NOTES: Saved with update-profile.
+// WHAT : First-time profile form: name, email and an optional referral code.
+//        Shown as a bottom sheet on top of Home right after a brand-new
+//        customer verifies their OTP; on success the emergency contacts
+//        screen follows, then Home with the enable-location sheet.
+// NOTES: Saved with update-profile; the referral code (if typed) with apply-referral.
 // =============================================================================
-import 'package:base_project_flutter/views/PersonalDetails/components/referalCardView.dart';
+import 'package:base_project_flutter/views/EmergencyContact/EmergencyContacts.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,6 +32,7 @@ class PersonalDetails extends StatefulWidget {
 class _PersonalDetailsState extends State<PersonalDetails> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _emailaddressController = TextEditingController();
+  final TextEditingController _referralController = TextEditingController();
 
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
@@ -146,6 +148,33 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                     },
                   ),
                   SizedBox(height: 3.h),
+                  Text(
+                    'referral_code'.tr,
+                    style: TextStyle(
+                        color: tDarkOrangeColor,
+                        fontSize: isTab(context) ? 9.sp : 12.sp),
+                  ),
+                  SizedBox(height: 1.h),
+                  TextFormFieldWidgets(
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                    controller: _referralController,
+                    keyboardTyp: TextInputType.text,
+                    contentPadding:
+                    EdgeInsets.symmetric(vertical: 13, horizontal: 20),
+                    fillcolor: tBackground,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(10.0),
+                      ),
+                    ),
+                    hinttext: 'Referral code (optional)',
+                    hintStyl: TextStyle(
+                        color: tGray,
+                        fontSize: isTab(context) ? 10.sp : 13.sp,
+                        fontWeight: FontWeight.w400),
+                    validator: (value) => null,
+                  ),
+                  SizedBox(height: 3.h),
                   Center(
                     child: SizedBox(
                       width: isTab(context) ? 50.w : 50.w,
@@ -172,19 +201,28 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                             };
                             var res =
                                 await UserAPI().personalDetails(context, param);
-                            if (res != null && res['status'] == 'OK') {
-                              Twl.navigateBack(context);
-                              showModalBottomSheet(
-                                  isScrollControlled: true,
-                                  context: context,
-                                  backgroundColor: Colors.transparent,
-                                  isDismissible: false,
-                                  enableDrag: false,
-                                  builder: (context) => ReferalCardView());
-                            } else {
+                            if (res == null || res['status'] != 'OK') {
                               Twl.createAlert(
-                                  context, 'Oops', res['error'].toString());
+                                  context, 'Oops', '${res?['error']}');
+                              return;
                             }
+                            // The referral code is optional; a wrong one is shown
+                            // here so the customer can fix or clear it.
+                            final code = _referralController.text.trim();
+                            if (code.isNotEmpty) {
+                              var ref = await UserAPI()
+                                  .applyReferral(context, {"referal_code": code});
+                              if (ref == null || ref['status'] != 'OK') {
+                                Twl.createAlert(
+                                    context, 'Oops', '${ref?['error']}');
+                                return;
+                              }
+                            }
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(MaterialPageRoute(
+                                builder: (_) =>
+                                    EmergencyContact(showLocationSheet: true)));
                           }
                         },
                       ),

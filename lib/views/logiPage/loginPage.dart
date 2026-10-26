@@ -1,7 +1,8 @@
 // =============================================================================
-// WHAT : Login screen: customer enters the mobile number and accepts the terms;
-//        the server sends an OTP SMS.
-// NOTES: On success moves to the OTP screen.
+// WHAT : Login screen, the first screen for a signed-out customer: logo and
+//        welcome line, mobile number and terms; the server sends an OTP SMS.
+// NOTES: On success moves to the OTP screen. (It replaces the old separate
+//        "Get Started" welcome screen.)
 // =============================================================================
 import 'package:base_project_flutter/api_services/userApi.dart';
 import 'package:flutter/gestures.dart';
@@ -74,11 +75,27 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 Expanded(
-                  child: Center(
-                    child: Image.asset(
-                      Images.LOGO,
-                      scale: 4,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        Images.LOGO,
+                        scale: 4,
+                      ),
+                      SizedBox(height: 2.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 30),
+                        child: Text(
+                          'Book a driver or a ride in minutes',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.mulish(
+                            color: tWhite,
+                            fontWeight: FontWeight.w600,
+                            fontSize: isTab(context) ? 10.sp : 14.sp,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Container(

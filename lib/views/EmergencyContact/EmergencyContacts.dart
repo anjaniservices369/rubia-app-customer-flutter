@@ -1,10 +1,13 @@
 // =============================================================================
-// WHAT : First-time screen to add emergency contacts.
-// NOTES: Used by the SOS feature.
+// WHAT : First-time screen to add emergency contacts (two numbers, required).
+//        Part of registration right after the name and email sheet; also shown
+//        on the next start to a customer who has none yet.
+// NOTES: Used by the SOS feature. On success it opens Home, with the
+//        enable-location sheet when it came from registration.
 // =============================================================================
 import 'package:base_project_flutter/api_services/userApi.dart';
 import 'package:base_project_flutter/globalFuctions/globalFunctions.dart';
-import 'package:base_project_flutter/views/PersonalDetails/personalDetailsView.dart';
+import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,7 +25,6 @@ import '../../../responsive.dart';
 import '../../globalWidgets/TextFieldWidgets.dart';
 import '../../globalWidgets/TextFildTital.dart';
 import '../../globalWidgets/buttonIconWidget.dart';
-import '../PersonalDetails/components/referalCardView.dart';
 
 // >>> START: EmergencyContact - screen/widget shell (the visible part is in its State class)
 class EmergencyContact extends StatefulWidget {
@@ -35,6 +37,7 @@ class EmergencyContact extends StatefulWidget {
     this.gender,
     this.address,
     this.detailss,
+    this.showLocationSheet = false,
   }) : super(key: key);
   var firstName;
   var lastName;
@@ -43,6 +46,8 @@ class EmergencyContact extends StatefulWidget {
   var gender;
   var address;
   var detailss;
+  // True when opened from registration: Home then asks for the location.
+  final bool showLocationSheet;
 
   @override
   State<EmergencyContact> createState() => _EmergencyContactState();
@@ -158,36 +163,18 @@ class _EmergencyContactState extends State<EmergencyContact> {
 
   // >>> START: build - draws this screen/widget on the display
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        showModalBottomSheet(
-          isScrollControlled: true,
-          context: context,
-          backgroundColor: Colors.transparent,
-          builder: (context) => PersonalDetails(details: widget.detailss),
-        );
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) Twl.willpopAlert(context);
       },
       child: Scaffold(
         backgroundColor: tWhite,
         appBar: AppBar(
-          titleSpacing: 5,
+          titleSpacing: 18,
           elevation: 0,
+          automaticallyImplyLeading: false,
           backgroundColor: tWhite,
-          leading: GestureDetector(
-            onTap: () {
-              showModalBottomSheet(
-                isScrollControlled: true,
-                context: context,
-                backgroundColor: Colors.transparent,
-                builder: (context) => PersonalDetails(details: widget.detailss),
-              );
-            },
-            child: Padding(
-              padding: EdgeInsets.all(isTab(context) ? 10 : 13.0),
-              child: BackIconWidget(),
-            ),
-          ),
           centerTitle: false,
           title: Text(
             'emergency_contacts'.tr,
@@ -197,37 +184,6 @@ class _EmergencyContactState extends State<EmergencyContact> {
               fontSize: isTab(context) ? 10.sp : 16.sp,
             ),
           ),
-          // actions: [
-          //         Twl.navigateBack(context);
-          //         showModalBottomSheet(
-          //           isScrollControlled: true,
-          //           // expand: false,
-          //           context: context,
-          //           backgroundColor: Colors.transparent,
-          //           builder: (context) => Padding(
-          //               padding: EdgeInsets.symmetric(horizontal: 0),
-          //               child: ReferalCardView()),
-          //         );
-          //       },
-          //       child: Row(
-          //         children: [
-          //           Text(
-          //             'skip'.tr,
-          //             style: TextStyle(
-          //               color: tPrimaryColor,
-          //               fontWeight: FontWeight.bold,
-          //               fontSize: isTab(context) ? 10.sp : 12.sp,
-          //             ),
-          //           ),
-          //           SizedBox(
-          //             width: 1.w,
-          //           ),
-          //           Icon(
-          //             Icons.keyboard_arrow_right,
-          //             color: tPrimaryColor,
-          //           )
-          //         ],
-          // ],
         ),
         body: Padding(
           padding: EdgeInsets.symmetric(horizontal: 18),
@@ -445,10 +401,6 @@ class _EmergencyContactState extends State<EmergencyContact> {
                   // boxshadow: [tButtonBoxshadow],
                   onTap: (startLoading, stopLoading, btnState) async {
                     startLoading();
-                    // showBarModalBottomSheet(
-                    //     expand: false,
-                    //         height: MediaQuery.of(context).size.height / 2,
-                    //         child: ReferalCardView()));
 
                     if (_formKey.currentState!.validate()) {
                       startLoading();
@@ -463,12 +415,13 @@ class _EmergencyContactState extends State<EmergencyContact> {
                       };
                       var res = await UserAPI().emergenyContact(context, param);
                       if (res != null && res['status'] == 'OK') {
-                        showModalBottomSheet(
-                            isScrollControlled: true,
-                            // expand: false,
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => ReferalCardView());
+                        Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                                builder: (_) => BottomNavigation(
+                                    tabIndexId: 0,
+                                    showLocationSheet:
+                                        widget.showLocationSheet)),
+                            (route) => false);
                       } else {
                         stopLoading();
                         Twl.createAlert(

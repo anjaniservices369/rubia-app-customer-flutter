@@ -222,20 +222,19 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `EmergencyContacts.dart` | First-time screen to add emergency contacts. | Used by the SOS feature. |
+| `EmergencyContacts.dart` | First-time screen to add emergency contacts (two numbers, required). Part of registration right after the name and email sheet; also shown on the next start to a customer who has none yet. | Used by the SOS feature. On success it opens Home, with the enable-location sheet when it came from registration. |
 
 ## `views/PersonalDetails`
 
 | File | What it does | Notes |
 |---|---|---|
-| `personalDetailsView.dart` | First-time profile form: name, email. Shown as a bottom sheet on top of Home right after a brand-new customer verifies their OTP, chained into the referral-code and enable-location sheets that follow it. | Saved with update-profile. |
+| `personalDetailsView.dart` | First-time profile form: name, email and an optional referral code. Shown as a bottom sheet on top of Home right after a brand-new customer verifies their OTP; on success the emergency contacts screen follows, then Home with the enable-location sheet. | Saved with update-profile; the referral code (if typed) with apply-referral. |
 
 ## `views/PersonalDetails/components`
 
 | File | What it does | Notes |
 |---|---|---|
 | `EnableLocationView.dart` | Asks the customer to allow location access. | Needed to find the pickup address. ignore_for_file: deprecated_member_use import 'dart:html'; |
-| `referalCardView.dart` | Lets a new customer enter a referral code. | Gives the referrer a reward. |
 
 ## `views/RideBooking`
 
@@ -307,13 +306,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `loginPage.dart` | Login screen: customer enters the mobile number and accepts the terms; the server sends an OTP SMS. | On success moves to the OTP screen. |
-
-## `views/onBoardingpage`
-
-| File | What it does | Notes |
-|---|---|---|
-| `onBoardingPage.dart` | First-run welcome screen with the 'Get Started' button. | Shown only when nobody is logged in. One screen (no stacked sheets). |
+| `loginPage.dart` | Login screen, the first screen for a signed-out customer: logo and welcome line, mobile number and terms; the server sends an OTP SMS. | On success moves to the OTP screen. (It replaces the old separate "Get Started" welcome screen.) |
 
 ## `views/orderTracking`
 

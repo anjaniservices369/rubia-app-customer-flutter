@@ -15,6 +15,7 @@ import '../../constants/imageConstant.dart';
 import '../../globalFuctions/globalFunctions.dart';
 import '../Bookings/bookingPageView.dart';
 import '../Bookings/components/rateRide.dart';
+import '../PersonalDetails/components/EnableLocationView.dart';
 import '../PersonalDetails/personalDetailsView.dart';
 
 // >>> START: BottomNavigation - screen/widget shell (the visible part is in its State class)
@@ -24,14 +25,16 @@ class BottomNavigation extends StatefulWidget {
     this.tabIndexId,
     this.selectedType,
     this.showRegistrationSheet = false,
+    this.showLocationSheet = false,
   }) : super(key: key);
 
   final tabIndexId;
   final selectedType;
-  // A brand-new customer completes their profile (name/email, referral,
-  // location) as a chain of bottom sheets opened on top of Home, right after
-  // this screen first appears, instead of a separate full-screen stop.
+  // A brand-new customer starts registration with the name / email / referral
+  // sheet opened on top of Home, right after this screen first appears. The
+  // emergency contacts screen follows, then Home again with the location sheet.
   final bool showRegistrationSheet;
+  final bool showLocationSheet;
   @override
   _BottomNavigationState createState() => _BottomNavigationState();
 }
@@ -99,6 +102,18 @@ class _BottomNavigationState extends State<BottomNavigation>
             isDismissible: false,
             enableDrag: false,
             builder: (context) => PersonalDetails(),
+          );
+        }
+      });
+    }
+    if (widget.showLocationSheet) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showModalBottomSheet(
+            isScrollControlled: true,
+            context: context,
+            backgroundColor: Colors.transparent,
+            builder: (context) => EnableLocationView(),
           );
         }
       });

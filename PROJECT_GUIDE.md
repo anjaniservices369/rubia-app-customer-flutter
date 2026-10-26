@@ -31,28 +31,30 @@ There are **three separate apps / systems** that work together:
 
 ## 2. The customer's journey (in plain words)
 
-1. **Welcome** → the customer taps *Get Started*.
-2. **Login** → enters the mobile number. The server sends a 4-digit **OTP by SMS**.
-3. **OTP** → the app reads the SMS automatically and signs the customer in.
-4. **Profile (first time)** → name, email, gender, date of birth, emergency contacts.
-5. **Home** → taps **Drivers**.
-6. **Book a driver** (one screen) → one-way or round trip; in-city or out-station; then the
+1. **Login** → the first screen: logo, a welcome line, the mobile number and the terms tick.
+   The server sends a 4-digit **OTP by SMS**.
+2. **OTP** → the app reads the SMS automatically and signs the customer in.
+3. **Registration (first time only)** → on top of Home: **name, email and an optional referral
+   code** (one sheet); then **two emergency contacts** (required, full screen); then Home, which
+   asks for the **location**. See section 12.
+4. **Home** → taps **Drivers** or **Taxi**.
+5. **Book a driver** (one screen) → one-way or round trip; in-city or out-station; then the
    **vehicle first**: automatic/manual and car type (SUV+, SUV, Sedan, Hatchback); then pickup and
    drop on a map (the app checks the place is inside Rubia's service area); pickup time (next free
    slot pre-filled); then **Next**.
-7. **Estimate and confirm** (one screen) → the server calculates the price (e.g. ₹609 for 2 hours).
+6. **Estimate and confirm** (one screen) → the server calculates the price (e.g. ₹609 for 2 hours).
    Hours and coupons can be changed; **Confirm Ride** saves the booking: *"Your order has been
    placed"*.
-8. **Waiting for driver** → a driver accepts. The customer sees the driver and a 4-digit **ride OTP**.
-9. **Ride** → the driver arrives, the customer shares the OTP, the ride starts and ends.
-10. **Rate the driver, right when the ride ends** → as soon as the ride is completed a
+7. **Waiting for driver** → a driver accepts. The customer sees the driver and a 4-digit **ride OTP**.
+8. **Ride** → the driver arrives, the customer shares the OTP, the ride starts and ends.
+9. **Rate the driver, right when the ride ends** → as soon as the ride is completed a
     **"Ride Completed"** sheet opens on top of whatever screen the customer is on (Home,
     Bookings, the live ride screen): driver name, stars, optional review, **Submit** or
     **Later**. **Submit** shows "Thanks for your rating" and opens **Home**; Back does not return
     to the finished ride. **Later** keeps the rating available on the ride's details in
     Bookings → Completed, but the customer is not asked again for that ride.
-11. **Pay** → cash or wallet.
-12. **Cancel** (optional) → the customer can cancel; a cancellation fee may apply.
+10. **Pay** → cash or wallet.
+11. **Cancel** (optional) → the customer can cancel; a cancellation fee may apply.
 
 ---
 
@@ -209,9 +211,10 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
 3. **Phone:** `adb reverse tcp:8080 tcp:8080`, then build and install the app with
    `--dart-define=API_BASE_URL=http://localhost:8080/api`.
 4. **Customer in the app:** the test customer is **9999900001, named Veera** (code 1234 through the
-   dev test login above). Get Started → phone number → tick the terms box → OTP → name and
-   email (use **Veera** as the name when the account is new) → emergency contacts (two numbers) →
-   Home → Drivers → one-way, in-city → pick the drop
+   dev test login above). For a brand-new account use **9999900002** (also in
+   `OTP_TEST_NUMBERS`; created on 26 Oct 2026 as customer 7146, named Veera). Phone number → tick
+   the terms box → OTP (the 4th digit submits it by itself) → Name, email and an optional referral
+   code → emergency contacts (two numbers) → Home → Drivers → one-way, in-city → pick the drop
    on the map → Automatic, Sedan → Next → today/tomorrow and time → OK → estimate → Next →
    Confirm Ride. The booking shows "Waiting for Driver" with a 4-digit ride OTP.
 5. **Driver:** the Partner app was not used. The driver was played through its API
@@ -469,12 +472,53 @@ Setting up the database and backend for this is in section 7.2.
   with a bike or auto vehicle is needed).
 
 ---
+
+## 12. Registration flow (shortened on 26 Oct 2026)
+
+### 12.1 The flow now
+
+| # | Screen | What the customer does | Code |
+|---|---|---|---|
+| 1 | **Login** (first screen; the old separate "Get Started" welcome screen is gone) | Logo and a welcome line, mobile number, tick the terms, **Login**. | `logiPage/loginPage.dart` |
+| 2 | **OTP** | Enters the 4 digits (read from the SMS; the 4th digit submits by itself). | `otpPage/otpPage.dart` |
+| 3 | **Name, email, referral** (sheet over Home, cannot be dismissed) | Full name and email are required; **referral code is optional**. A wrong code shows "Referral code does not exist" and the sheet stays, so it can be fixed or cleared. | `PersonalDetails/personalDetailsView.dart` |
+| 4 | **Emergency contacts** (full screen) | Two phone numbers, required (used by SOS). No back arrow; Back asks to exit the app. | `EmergencyContact/EmergencyContacts.dart` |
+| 5 | **Home + location sheet** | Home opens with the "enable location" sheet (the old separate step). | `bottomNavigation.dart` (`showLocationSheet`), `PersonalDetails/components/EnableLocationView.dart` |
+
+Before: Get Started → Login → OTP → name and email sheet → referral sheet → location sheet, and the
+emergency contacts were **not** part of that chain: a new customer got them as a surprise full
+screen on the **next app start**, and after saving them the old code opened the referral and
+location sheets again and left the customer on the contacts screen.
+
+### 12.2 Rules kept
+
+- Emergency contacts stay **required**. If the app is closed before they are saved, the next start
+  opens the contacts screen (`main.dart`), then Home (no location sheet in that case).
+- If the app is closed after OTP but before the name is saved, the next start opens Home with the
+  name sheet again (`check` API: no email yet).
+- After the last step Home replaces every earlier screen, so Back from Home leaves the app and
+  never returns to a registration screen.
+- Deleted as unused: `onBoardingpage/onBoardingPage.dart`, `PersonalDetails/components/referalCardView.dart`.
+
+### 12.3 Tested on the phone (26 Oct 2026, new test number 9999900002)
+
+Login is the first screen; OTP 1234 signed in and opened the name sheet; a wrong referral code
+showed the error; with the field cleared **Next** opened Emergency Contacts; two numbers saved
+(`user_emergency_contacts` rows for customer 7146) and Home opened. With the contacts deleted and
+the app restarted, the contacts screen came first and then Home.
+
+### 12.4 Not done yet
+
+- Gender, date of birth and profile photo are not asked at registration (only in Profile).
+- The terms link opens the website; there is no in-app copy of the terms.
+
+---
 ## Live inventory (generated)
 
 <!-- AUTO:inventory:start -->
 _This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
 
-- Source files: **154**
+- Source files: **152**
 - Server endpoints: **50**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**
