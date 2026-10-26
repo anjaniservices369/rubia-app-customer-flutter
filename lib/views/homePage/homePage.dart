@@ -27,7 +27,7 @@ import '../../constants/constants.dart';
 import '../../globalFuctions/globalFunctions.dart';
 
 import '../RideBooking/selectLocationPage.dart';
-import '../../taxi/taxiBookingPage.dart';
+import '../../taxi/taxiServicesPage.dart';
 
 // >>> START: HomePage - home screen: services, banners and address
 class HomePage extends StatefulWidget {
@@ -644,11 +644,11 @@ class _HomePageState extends State<HomePage> {
         break;
 
       case TAXI:
-        // Uber / Rapido style flow: Bike, Auto and Taxi in one booking screen.
+        // Taxi opens the Bike / Auto / Car service cards; each books on its own backend.
         tripOptionsProvider.setServiceType('TAXI');
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const TaxiBookingPage()),
+          MaterialPageRoute(builder: (context) => const TaxiServicesPage()),
         );
         break;
 

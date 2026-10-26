@@ -3,8 +3,9 @@
 //        the server: vehicles with fares, ride request, driver search, live
 //        ride status, cancel and rating.
 // NOTES: Rubia runs taxi as three services with their own rider addresses:
-//        /bike-user, /auto-user and /car-user. One screen lists all three
-//        (Bike, Auto, Taxi) by asking each of them. The id and service of the
+//        /bike-user, /auto-user and /car-user (each its own backend and
+//        database on the server). The rider picks one of them (Bike, Auto,
+//        Car) before booking. The id and service of the
 //        ride in progress are saved on the phone so the ride resumes.
 // =============================================================================
 import 'dart:async';
@@ -32,7 +33,7 @@ class TaxiService {
 const List<TaxiService> taxiServices = [
   TaxiService('bike', 'bike-user', 4, 'Bike'),
   TaxiService('auto', 'auto-user', 3, 'Auto'),
-  TaxiService('car', 'car-user', 2, 'Taxi'),
+  TaxiService('car', 'car-user', 2, 'Car'),
 ];
 
 TaxiService taxiServiceByKey(String key) =>
@@ -82,13 +83,13 @@ class TaxiApi {
   // <<< END: _auth - the saved login code
 
   // >>> START: vehicles - asks the three services which vehicles serve this trip and at what fare
-  /// Bike, Auto and Taxi options for the trip, cheapest first. A service that
-  /// does not serve the area (or fails) is simply left out of the list.
+  /// The vehicles of one taxi service (each service has its own backend), cheapest
+  /// first. A service that does not serve the area (or fails) gives an empty list.
   static Future<List<TaxiVehicle>> vehicles(
-      TaxiPlace pickup, TaxiPlace drop) async {
+      TaxiPlace pickup, TaxiPlace drop, TaxiService service) async {
     final auth = await _auth();
     if (auth == null) return [];
-    final answers = await Future.wait(taxiServices.map((s) async {
+    final answers = await Future.wait([service].map((s) async {
       final res = await ApiHelper().getTypePostBG(
           '/${s.path}/get-vehicles?auth_code=$auth', {
         'pickup_pincode': pickup.pincode,

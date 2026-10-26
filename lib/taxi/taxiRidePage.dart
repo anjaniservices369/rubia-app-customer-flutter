@@ -152,7 +152,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
         context: context,
         builder: (c) => AlertDialog(
               title: const Text('Cancel this ride?'),
-              content: const Text('Your driver will be told that you cancelled.'),
+              content: const Text('Your taxi driver will be told that you cancelled.'),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('No')),
                 TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Yes, cancel')),
@@ -248,11 +248,11 @@ class _TaxiRidePageState extends State<TaxiRidePage>
           ]),
         ),
       ),
-      Text('Finding your ${_service.label.toLowerCase()}...',
+      Text('Finding your taxi driver...',
           style: TextStyle(
               color: tDarkNavyblue, fontSize: 20, fontWeight: FontWeight.w800)),
       const SizedBox(height: 4),
-      const Text('We are asking nearby drivers to accept your ride.',
+      const Text('We are asking nearby taxi drivers to accept your ride.',
           textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
       const SizedBox(height: 10),
       _tripLines(),
@@ -284,16 +284,16 @@ class _TaxiRidePageState extends State<TaxiRidePage>
   // >>> START: _driverCard - driver, vehicle, OTP and call
   Widget _driverCard() {
     final r = _ride!;
-    final name = '${r['name'] ?? 'Your driver'}'.trim();
+    final name = '${r['name'] ?? 'Your taxi driver'}'.trim();
     final vehicle = '${r['vehical'] ?? _service.label}';
     final number = '${r['vehical_number'] ?? ''}';
     final phone = '${r['contact_no'] ?? ''}';
     final image = '${r['profile_image'] ?? ''}';
     final headline = _status == 6
-        ? 'Your driver has arrived'
+        ? 'Your taxi driver has arrived'
         : _status == 5
-            ? 'Your driver is on the way'
-            : 'Driver accepted your ride';
+            ? 'Your taxi driver is on the way'
+            : 'Taxi driver accepted your ride';
     return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(headline,
           style: TextStyle(color: tDarkNavyblue, fontSize: 20, fontWeight: FontWeight.w800)),
@@ -313,7 +313,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name.isEmpty ? 'Your driver' : name,
+            Text(name.isEmpty ? 'Your taxi driver' : name,
                 style: TextStyle(color: tDarkNavyblue, fontSize: 17, fontWeight: FontWeight.w800)),
             Text([vehicle, number].where((e) => e.isNotEmpty).join('  ·  '),
                 style: const TextStyle(color: Colors.black54)),
@@ -338,7 +338,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
             border: Border.all(color: tPrimaryColor.withOpacity(0.4))),
         child: Row(children: [
           const Expanded(
-              child: Text('Share this OTP with your driver to start the ride',
+              child: Text('Share this OTP with your taxi driver to start the ride',
                   style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600))),
           Text('${r['otp'] ?? ''}',
               style: TextStyle(
@@ -385,12 +385,12 @@ class _TaxiRidePageState extends State<TaxiRidePage>
       Text('You have arrived',
           style: TextStyle(color: tDarkNavyblue, fontSize: 20, fontWeight: FontWeight.w800)),
       const SizedBox(height: 4),
-      Text('Please pay $_fare to your driver',
+      Text('Please pay $_fare to your taxi driver',
           style: TextStyle(color: tPrimaryColor, fontSize: 18, fontWeight: FontWeight.w800)),
       const SizedBox(height: 10),
       _tripLines(),
       const SizedBox(height: 8),
-      const Text('Rate your driver', style: TextStyle(fontWeight: FontWeight.w700)),
+      const Text('Rate your taxi driver', style: TextStyle(fontWeight: FontWeight.w700)),
       const SizedBox(height: 6),
       RatingBar.builder(
         initialRating: _rating,
@@ -438,8 +438,8 @@ class _TaxiRidePageState extends State<TaxiRidePage>
         '${_ride?['driver_id']}' == '0';
     final title = _status == 7
         ? (noDriver
-            ? 'No driver is available right now'
-            : 'The driver cancelled the ride')
+            ? 'No taxi driver is available right now'
+            : 'The taxi driver cancelled the ride')
         : 'Ride cancelled';
     return Column(mainAxisSize: MainAxisSize.min, children: [
       Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 44),

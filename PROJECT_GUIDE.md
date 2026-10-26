@@ -10,7 +10,7 @@ Last updated: 26 Oct 2026.
 The **Rubia Customer App** is the Android/iOS app that Rubia's *customers* use.
 Today it offers two services on the home screen, both cards coming from the server's services list:
 **Drivers** (book a professional driver who drives the customer's own car, "Rubia Driver") and
-**Taxi** (instant rides in the style of Uber and Rapido: Bike, Auto or Taxi, see section 11). The
+**Taxi** (instant rides in the style of Uber and Rapido: a Bike, Auto or Car taxi, see section 11). The
 other tiles (Auto, Bike, Hotel, Jobs, Real Estate, Travel and Home Services) stay hidden.
 
 The app talks to the **Rubia server** (the "backend"), which holds all data: customers, drivers,
@@ -244,7 +244,7 @@ kept out of git through `.git/info/exclude`, so they are never committed by acci
 2. **Dispatch to drivers** needs a scheduled job (cron) on the server to offer new bookings to
    online drivers. Without it, the Partner app shows "No Bookings found".
 3. **Auto and Bike cards are hidden.** The server lists Auto and Bike as services of their own, but
-   the app offers them inside the Taxi flow (Bike, Auto and Taxi in one list), so only the Taxi
+   the app offers them inside the Taxi flow (Bike, Auto and Car cards), so only the Taxi
    card is shown. Hotel, Jobs and the other tiles stay hidden (`lib/constants/appScreens.dart`).
 4. **Fixed pincode 500081** is sent in booking and estimate requests. If Rubia expands beyond
    one area the real pincode of the picked address should be sent.
@@ -410,22 +410,30 @@ asked for the moment the ride completes (`views/Bookings/components/rateRide.dar
 
 ## 11. Taxi (Uber / Rapido style instant rides)
 
-The **Taxi** card on Home (the server lists it as service type 2) opens `lib/taxi/`. One screen
-offers all three vehicle kinds, the way Uber and Rapido do, instead of three separate products.
+The **Taxi** card on Home (the server lists it as service type 2) opens `lib/taxi/`. Inside Taxi
+there are **three taxi services: Bike, Auto and Car**. On the server each one is its own service
+with its own entry point, rider address and database setting (`DB_DSN_BIKETAXI`, `DB_DSN_AUTOTAXI`,
+`DB_DSN_CARTAXI`; when a setting is missing the shared database is used, which is the case on the
+local test setup). The app is native Flutter and loads everything (service cards on Home, fares,
+rides) from the backend as JSON; nothing is rendered on the server. Inside the taxi flow the
+drivers are called **taxi drivers**.
 
-### 11.1 The flow (3 screens)
+### 11.1 The flow (4 screens)
 
+0. **Service cards** (`taxiServicesPage.dart`): three cards, **Bike**, **Auto** and **Car**. The
+   customer chooses one; the booking below then talks only to that service. If a taxi ride is
+   still open this screen is skipped and the ride reopens (see Resume).
 1. **Booking screen** (`taxiBookingPage.dart`): full-screen map with the pickup pin on the current
    location. "Where to?" opens a map picker (`taxiPlacePicker.dart`, a centre pin and Confirm);
-   the pickup can be changed the same way. After a drop is chosen the screen lists **Bike, Auto and
-   Taxi** with fare, ETA, seats and distance (live from the server). The customer picks one,
-   sees "Pay by cash", and taps **Book X · ₹N**.
+   the pickup can be changed the same way. After a drop is chosen the screen lists the chosen
+   service's vehicles with fare, ETA, seats and distance (live from the server). The customer
+   picks one, sees "Pay by cash", and taps **Book X · ₹N**.
 2. **Ride screen** (`taxiRidePage.dart`), refreshed every 3 seconds, one card per ride status:
-   - *Finding your taxi...* (radar, route on the map, **Cancel ride** with a confirmation);
-   - *Driver accepted / on the way / arrived*: driver name, vehicle, number, **OTP** to tell the
-     driver, **call** button, Cancel;
+   - *Finding your taxi driver...* (radar, route on the map, **Cancel ride** with a confirmation);
+   - *Taxi driver accepted / on the way / arrived*: name, vehicle, number, **OTP** to tell the
+     taxi driver, **call** button, Cancel;
    - *Trip started*; *Completed*: "Please pay ₹N" and a 5-star rating with a comment, then Home;
-   - *Cancelled / no driver available* (the server gives up after 120 seconds): **Back to Home**.
+   - *Cancelled / no taxi driver available* (the server gives up after 120 seconds): **Back to Home**.
    While searching, the app asks the server to offer the ride again about every 30 seconds.
 3. **Resume**: the open ride is remembered on the phone (`taxi_active_ride`). If the customer
    leaves (Back) and taps Taxi again, the ride screen reopens; a finished or cancelled ride clears
@@ -434,7 +442,7 @@ offers all three vehicle kinds, the way Uber and Rapido do, instead of three sep
 ### 11.2 Server calls
 
 The rider addresses differ per vehicle: `/api/bike-user/` (service type 4), `/api/auto-user/`
-(type 3), `/api/car-user/` (type 2, shown as "Taxi"). Each has `get-vehicles` (fare list),
+(type 3), `/api/car-user/` (type 2, shown as "Car"). Each has `get-vehicles` (fare list),
 `ride-request`, `auto-assign` (offers the ride to nearby drivers), `ride-request-detail`,
 `cancel-ride` and `add-rating`. All are wrapped in `TaxiApi` (`taxiApi.dart`).
 
@@ -466,7 +474,7 @@ Setting up the database and backend for this is in section 7.2.
 <!-- AUTO:inventory:start -->
 _This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
 
-- Source files: **153**
+- Source files: **154**
 - Server endpoints: **50**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**
