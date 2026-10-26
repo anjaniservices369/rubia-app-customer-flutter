@@ -471,14 +471,7 @@ class _RideDetailsViewState extends State<RideDetailsView> {
 
                                               var res = await UserAPI().myAddReview(context, param);
                                               if (res != null && res['status'] == 'OK') {
-                                                Text('Successfully updated');
-                                                Twl.forceNavigateTo(
-                                                    context,
-                                                    BottomNavigation(
-                                                      tabIndexId: 0,
-                                                    ));
-                                                // Twl.navigateTo(context,
-                                                //     RatingCard(rideData: widget.rideData));
+                                                Twl.goHomeAfterRating(context);
                                               } else {
                                                 Twl.createAlert(context, 'Oops', res['error'].toString());
                                               }

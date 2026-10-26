@@ -1,10 +1,11 @@
 // =============================================================================
 // WHAT : Despite the name this is LIVE: the date and time picker (class Clock)
-//        used when booking a driver, with the fare estimate button.
-// NOTES: The time spinner opens on the next quarter-hour that is at least 5
-//        minutes ahead. The file name 'dummy' is historic and could be renamed.
+//        used when booking a driver, plus the default pickup slot helper.
+// NOTES: The booking screen pre-fills the next free quarter-hour slot
+//        (applyDefaultPickupSlot); this sheet only edits it. OK stores the
+//        choice and closes the sheet; the screen that opened it asks the
+//        server for the fare. The file name 'dummy' is historic.
 // =============================================================================
-import 'package:base_project_flutter/api_services/servicesApi.dart';
 import 'package:base_project_flutter/constants/constants.dart';
 import 'package:base_project_flutter/responsive.dart';
 import 'package:flutter/material.dart';
@@ -17,27 +18,26 @@ import 'package:intl/intl.dart';
 import '../globalFuctions/globalFunctions.dart';
 import '../globalWidgets/buttonWidget.dart';
 import '../providers/riderProvider.dart';
-import 'homePage/components/OneWay.dart';
 
-// >>> START: Clock - date and time picker with the fare estimate button
+// >>> START: Clock - date and time picker sheet
 /// The "Select date / Select time" sheet of the Drivers booking.
 ///
 /// The customer picks today or tomorrow, then a time in 15-minute steps. The
-/// OK button asks the server for the fare estimate and, on success, opens the
-/// estimate screen (OneWay).
+/// OK button stores the choice in the booking in progress and closes the sheet
+/// (it pops `true`).
 class Clock extends StatefulWidget {
   const Clock({Key? key}) : super(key: key);
 
   @override
   State<Clock> createState() => _ClockState();
 }
-// <<< END: Clock - date and time picker with the fare estimate button
+// <<< END: Clock - date and time picker sheet
 
-// >>> START: _nextPickupSlot - next pickup slot
+// >>> START: nextPickupSlot - next pickup slot
 /// First quarter-hour slot that is at least 5 minutes ahead of now. The
 /// spinner snaps to 15-minute steps, so starting from `DateTime.now()` would
 /// open on a slot in the past (e.g. 17:13 -> 17:00).
-DateTime _nextPickupSlot() {
+DateTime nextPickupSlot() {
   // 1. Earliest acceptable moment = now + 5 minutes.
   final earliest = DateTime.now().add(const Duration(minutes: 5));
   // 2. Drop the seconds.
@@ -47,14 +47,46 @@ DateTime _nextPickupSlot() {
   final rest = earliest.minute % 15;
   return rest == 0 ? base : base.add(Duration(minutes: 15 - rest));
 }
-// <<< END: _nextPickupSlot - next pickup slot
+// <<< END: nextPickupSlot - next pickup slot
+
+// >>> START: pickupDateTimeOf - the pickup moment stored in the booking
+/// The pickup date and time stored in [provider] as one DateTime, or null when
+/// either is missing or cannot be read.
+DateTime? pickupDateTimeOf(TripOptionsProvider provider) {
+  if (provider.pickupDate.isEmpty || provider.pickupTime.isEmpty) return null;
+  try {
+    final day = DateTime.parse(provider.pickupDate);
+    final parts = provider.pickupTime.split(':');
+    return DateTime(day.year, day.month, day.day, int.parse(parts[0]),
+        int.parse(parts[1]));
+  } catch (_) {
+    return null;
+  }
+}
+// <<< END: pickupDateTimeOf - the pickup moment stored in the booking
+
+// >>> START: applyDefaultPickupSlot - pre-fills the pickup date and time
+/// Stores the next free slot as the pickup date/time when none is chosen yet
+/// or the chosen one has already passed. Returns true when it changed it.
+bool applyDefaultPickupSlot(TripOptionsProvider provider) {
+  final current = pickupDateTimeOf(provider);
+  if (current != null && current.isAfter(DateTime.now())) return false;
+  final slot = nextPickupSlot();
+  provider.setPickupDateTime(Twl.dateFormate(slot));
+  provider.setPickupTime(DateFormat('HH:mm').format(slot));
+  return true;
+}
+// <<< END: applyDefaultPickupSlot - pre-fills the pickup date and time
 
 // >>> START: _ClockState - the data and logic behind its screen
 class _ClockState extends State<Clock> {
-  // The time the spinner opens on (never in the past).
-  final DateTime _initialTime = _nextPickupSlot();
+  // The time the spinner opens on: the time already chosen for the booking, or
+  // the next free slot (never in the past).
+  DateTime _initialTime = nextPickupSlot();
   // The time the spinner currently shows (so a day change can re-check it).
   DateTime? _pickedTime;
+  // True once the spinner start time and the day chip were read from the booking.
+  bool _readFromBooking = false;
 
   // Which day chip is selected: 0 = today, 1 = tomorrow.
   var selectedIndex;
@@ -132,6 +164,20 @@ class _ClockState extends State<Clock> {
   Widget build(BuildContext context) {
     // The booking in progress; this sheet writes the date and time into it.
     final tripOptionsProvider = Provider.of<TripOptionsProvider>(context);
+
+    // First build only: open on the date and time already chosen for the
+    // booking (set by applyDefaultPickupSlot or an earlier edit).
+    if (!_readFromBooking) {
+      _readFromBooking = true;
+      final chosen = pickupDateTimeOf(tripOptionsProvider);
+      if (chosen != null && chosen.isAfter(DateTime.now())) {
+        _initialTime = chosen;
+        final today = DateTime.now();
+        selectedIndex =
+            (chosen.day == today.day && chosen.month == today.month) ? 0 : 1;
+        isInitialized = true;
+      }
+    }
 
     return Form(
       key: _formKey,
@@ -349,7 +395,7 @@ class _ClockState extends State<Clock> {
                     ],
                   ),
                   new TimePickerSpinner(
-                      // Opens on the next valid slot (see _nextPickupSlot).
+                      // Opens on the time already chosen (or the next slot).
                       time: _initialTime,
                       is24HourMode: true,
                       normalTextStyle: TextStyle(
@@ -405,96 +451,11 @@ class _ClockState extends State<Clock> {
                                                       .tr)));
                                       return;
                                     }
+                                    // The time is stored in the booking in
+                                    // progress; the screen that opened this
+                                    // sheet asks for the fare itself.
                                     if (_formKey.currentState!.validate()) {
-                                      startLoading();
-                                      // 1. Everything the server needs to
-                                      //    price the booking.
-                                      Map<String, String> param = {
-                                        // one-way (1) or round trip (2)
-                                        'rider_type': tripOptionsProvider
-                                            .riderType
-                                            .toString(),
-                                        // in-city (1) or out-station (2)
-                                        'trip_type': tripOptionsProvider
-                                            .tripType
-                                            .toString(),
-                                        // where from / where to
-                                        'pickup_latitude':
-                                            tripOptionsProvider.pickupLatitude,
-                                        'pickup_longitude':
-                                            tripOptionsProvider.pickupLongitude,
-                                        'drop_latitude':
-                                            tripOptionsProvider.dropLatitude,
-                                        'drop_longitude':
-                                            tripOptionsProvider.dropLongitude,
-                                        'pickup_address':
-                                            tripOptionsProvider.pickupAddress,
-                                        'drop_address':
-                                            tripOptionsProvider.dropAddress,
-                                        // the customer's car
-                                        'car_type': tripOptionsProvider.carType
-                                            .toString(),
-                                        'car_model': tripOptionsProvider
-                                            .carModel
-                                            .toString(),
-                                        // when, and for how long
-                                        'pickup_date': tripOptionsProvider
-                                            .pickupDate
-                                            .toString(),
-                                        'pickup_time': tripOptionsProvider
-                                            .pickupTime
-                                            .toString(),
-                                        'usage_hours': tripOptionsProvider
-                                            .usageHours
-                                            .toString(),
-                                        // money options
-                                        'coupon_code':
-                                            tripOptionsProvider.couponCode,
-                                        'is_vehicle_damage_protection':
-                                            tripOptionsProvider
-                                                .isVehicleDamageProtection,
-                                        'payment_method':
-                                            tripOptionsProvider.paymentMethod,
-                                        // the city's rate card to use
-                                        'city_id': tripOptionsProvider
-                                            .selectedCityId
-                                            .toString()
-                                      };
-                                      // 2. Ask the server (this does NOT save
-                                      //    the booking unless isSaveBooking).
-                                      var res = await ServicesAPI().getEstimate(
-                                          context,
-                                          param,
-                                          tripOptionsProvider.isSaveBooking);
-                                      if (res != null && res['status'] == 'OK') {
-                                        // 3a. Price = estimate + any pending
-                                        //     cancellation fee of the customer.
-                                        tripOptionsProvider.setEstimatePrice(
-                                            (res['estimate'] +
-                                                    res['calculateEstimate'][
-                                                        'cancellation_charges'])
-                                                .toString());
-                                        // 3b. Keep the full breakdown (base
-                                        //     fare, GST, extras...) for the bill.
-                                        tripOptionsProvider.setEstimate(
-                                            res['calculateEstimate']);
-                                        stopLoading();
-                                        // 3c. Show the estimate screen.
-                                        Twl.navigateTo(context, OneWay());
-                                      } else {
-                                        // 3'. Failed: show the server's
-                                        //     reason (or a general message).
-                                        stopLoading();
-                                        final reason = (res is Map &&
-                                                res['error'] != null)
-                                            ? res['error'].toString()
-                                            : 'Could not get the fare estimate. Please try again.';
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(SnackBar(
-                                                  content: Text(reason)));
-                                        }
-                                      }
+                                      Navigator.pop(context, true);
                                     }
                                   }),
                             ),

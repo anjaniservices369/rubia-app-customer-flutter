@@ -37,6 +37,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | File | What it does | Notes |
 |---|---|---|
 | `apiConstants.dart` | The server address and the path of every API call. | apiBaseUrl can be changed at build time with --dart- define=API_BASE_URL=... (default is the live server). Base Url const String apiBaseUrl = 'https://system.rubia.services/api'; Override for local testing, e.g. an emulator talking to a PC backend: --dart-define=API_BASE_URL=http://10.0.2.2:8080/api |
+| `appScreens.dart` | The small set of screens this app actually ships today. | Rubia customers book a Driver. Taxi/Auto/Bike and other tiles exist in code but are not live. Flip the flags below when a product should appear. Screen-by-screen work follows this list. |
 | `constants.dart` | App-wide settings: brand colours, booking status numbers and their meaning, trip/car types, service types (Driver, Taxi, Auto, Bike). | The status numbers must match the server. TAXI_STATUS_* are the taxi ride statuses of the server (no Firebase involved). |
 | `imageConstant.dart` | Names of the picture files (icons, banners, logos) used in the app. | The files themselves are in the assets/ folder. >>> START: Images - helper class |
 
@@ -158,8 +159,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `connectivity_check.dart` | Shows a 'no internet' notice when the phone is offline. | **UNUSED: no screen imports it** main.dart contains a second copy of the same wrapper; one of them could be removed. |
-| `dummy.dart` | Despite the name this is LIVE: the date and time picker (class Clock) used when booking a driver, with the fare estimate button. | The time spinner opens on the next quarter-hour that is at least 5 minutes ahead. The file name 'dummy' is historic and could be renamed. |
+| `dummy.dart` | Despite the name this is LIVE: the date and time picker (class Clock) used when booking a driver, plus the default pickup slot helper. | The booking screen pre-fills the next free quarter-hour slot (applyDefaultPickupSlot); this sheet only edits it. OK stores the choice and closes the sheet; the screen that opened it asks the server for the fare. The file name 'dummy' is historic. |
 | `dummy1.dart` | INACTIVE: whole file is commented out. | **UNUSED: no screen imports it** Safe to delete. import 'dart:io'; import 'dart:typed_data'; |
 | `translation.dart` | All on-screen text in the supported languages (English, Hindi, Kannada, Telugu, Tamil). | Add or fix wording here. A missing translation falls back to English. |
 
@@ -217,7 +217,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `personalDetailsView.dart` | First-time profile form: name, email, gender, date of birth. | Saved with update-profile. |
+| `personalDetailsView.dart` | First-time profile form: name, email. Shown as a bottom sheet on top of Home right after a brand-new customer verifies their OTP, chained into the referral-code and enable-location sheets that follow it. | Saved with update-profile. |
 
 ## `views/PersonalDetails/components`
 
@@ -235,8 +235,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `FavLocations.dart` | Choose the drop from saved favourite addresses. | Server: list-favourite-location. |
 | `RideEstimateInfo.dart` | Rental vehicle information and estimate details. | Visual component. |
 | `rideBill.dart` | Bill breakdown shown for the estimate. | Visual component. |
-| `selectLocationPage.dart` | DRIVERS BOOKING step 2: pickup and drop addresses with a map; checks the service area. | Server: check-boundary, vehicle-types. |
-| `selectRideType.dart` | DRIVERS BOOKING step 1: choose One-way or Round trip and In-city or Out-station. | Starts from the home screen's Drivers tile. |
+| `selectLocationPage.dart` | DRIVERS BOOKING step 1 (the single booking screen): trip type, pickup and drop with a map, gear and car type, pickup date and time; then asks the server for the fare and opens the estimate page. | Server: check-boundary, vehicle-types, get-estimate. Replaces the old "Select ride type" screen and the separate date/time step. |
 
 ## `views/WalletPage`
 
@@ -265,15 +264,14 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 |---|---|---|
 | `couponbottomsheet.dart` | Bottom sheet listing available coupons. | Choosing one applies a discount. |
 | `drawer.dart` | Side menu with the customer's name and shortcuts. | **UNUSED: no screen imports it** Visual component. |
-| `homePage.dart` | HOME: shows the services (Drivers, Taxi, Auto...), banners and the current address. | Only the first service (Drivers) is open; the others show 'Coming soon' by position. Tapping Drivers starts the booking. |
+| `homePage.dart` | HOME: shows the live services, banners and the current address. | By default only Driver is shown (see AppScreens). Other tiles stay hidden until showComingSoonServices is turned on. |
 
 ## `views/homePage/components`
 
 | File | What it does | Notes |
 |---|---|---|
-| `OneWay.dart` | DRIVERS BOOKING: summary of the one-way trip with the fare estimate. | Next step: confirm ride. |
+| `OneWay.dart` | DRIVERS BOOKING step 2 (estimate and confirm): trip summary, fare, hours of use, coupon and payment, with the 'Confirm Ride' button that saves the booking on the server. | Replaces the old estimate page + confirmation sheet. On success shows 'Order placed', starts the background status checker and opens My Bookings. |
 | `Rategratingcard.dart` | Rating prompt shown after a ride. | Sends the rating to the server. |
-| `confirmride.dart` | DRIVERS BOOKING: final confirmation sheet; 'Confirm Ride' saves the booking on the server. | On success shows 'Order placed' and starts the background status checker. |
 | `coupon.dart` | Enter or pick a coupon code and apply it to the estimate. | **UNUSED: no screen imports it** Calls apply-coupon. |
 | `coupons.dart` | Full list of coupons with details. | Loads from the server. |
 | `orderPlaced.dart` | DRIVERS BOOKING: 'Your order has been placed' screen. | **UNUSED: no screen imports it** Leads to My Bookings. |
@@ -298,13 +296,13 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `loginPage.dart` | Login screen: customer enters the mobile number and accepts the terms; the server sends an OTP SMS. | On success moves to the OTP screen. import 'dart:html'; |
+| `loginPage.dart` | Login screen: customer enters the mobile number and accepts the terms; the server sends an OTP SMS. | On success moves to the OTP screen. |
 
 ## `views/onBoardingpage`
 
 | File | What it does | Notes |
 |---|---|---|
-| `onBoardingPage.dart` | First-run welcome screen with the 'Get Started' button. | Shown only when nobody is logged in. |
+| `onBoardingPage.dart` | First-run welcome screen with the 'Get Started' button. | Shown only when nobody is logged in. One screen (no stacked sheets). |
 
 ## `views/orderTracking`
 
@@ -361,7 +359,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `one_way_Trip.dart` | One-way trip tab content. | Visual component. |
+| `one_way_Trip.dart` | One-way trip tab content. | **UNUSED: no screen imports it** Visual component. |
 
 ## `views/select_ridePage/components/one_wayPage/components`
 

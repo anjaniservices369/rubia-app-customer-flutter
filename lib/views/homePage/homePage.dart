@@ -25,7 +25,7 @@ import '../../constants/appScreens.dart';
 import '../../constants/constants.dart';
 import '../../globalFuctions/globalFunctions.dart';
 
-import '../RideBooking/selectRideType.dart';
+import '../RideBooking/selectLocationPage.dart';
 
 // >>> START: HomePage - home screen: services, banners and address
 class HomePage extends StatefulWidget {
@@ -630,10 +630,10 @@ class _HomePageState extends State<HomePage> {
           Twl.CancellationChargesBox(
               context, cancellationDetails['cancel_charges']);
         } else {
-          //Navigate to SelectRideType page for driver
+          //Navigate to the single booking screen for driver
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => SelectRideType()),
+            MaterialPageRoute(builder: (context) => SelectLocationPage()),
           );
         }
 

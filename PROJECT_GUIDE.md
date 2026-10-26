@@ -35,15 +35,18 @@ There are **three separate apps / systems** that work together:
 3. **OTP** → the app reads the SMS automatically and signs the customer in.
 4. **Profile (first time)** → name, email, gender, date of birth, emergency contacts.
 5. **Home** → taps **Drivers**.
-6. **Choose trip** → one-way or round trip; in-city or out-station.
-7. **Pickup and drop** → picked on a map. The app checks the place is inside Rubia's service area.
-8. **Car and time** → automatic/manual, car type (SUV+, SUV, Sedan, Hatchback), date and time.
-9. **Estimate** → the server calculates the price (e.g. ₹609 for 2 hours). Coupons can be applied.
-10. **Confirm Ride** → the booking is saved: *"Your order has been placed"*.
-11. **Waiting for driver** → a driver accepts. The customer sees the driver and a 4-digit **ride OTP**.
-12. **Ride** → the driver arrives, the customer shares the OTP, the ride starts and ends.
-13. **Pay and rate** → pay cash/wallet, rate the driver.
-14. **Cancel** (optional) → the customer can cancel; a cancellation fee may apply.
+6. **Book a driver** (one screen) → one-way or round trip; in-city or out-station; pickup and drop
+   on a map (the app checks the place is inside Rubia's service area); pickup time (next free slot
+   pre-filled); automatic/manual and car type (SUV+, SUV, Sedan, Hatchback); then **Next**.
+7. **Estimate and confirm** (one screen) → the server calculates the price (e.g. ₹609 for 2 hours).
+   Hours and coupons can be changed; **Confirm Ride** saves the booking: *"Your order has been
+   placed"*.
+8. **Waiting for driver** → a driver accepts. The customer sees the driver and a 4-digit **ride OTP**.
+9. **Ride** → the driver arrives, the customer shares the OTP, the ride starts and ends.
+10. **Pay and rate** → pay cash/wallet, then rate the driver (stars and an optional review) on the
+    ride details of the completed ride. After **Submit** the customer sees "Thanks for your
+    rating" and lands on **Home**; Back does not return to the finished ride.
+11. **Cancel** (optional) → the customer can cancel; a cancellation fee may apply.
 
 ---
 
@@ -251,52 +254,67 @@ kept out of git through `.git/info/exclude`, so they are never committed by acci
 
 ---
 
-## 10. Booking flow screen by screen, and how to shorten it (audit of 26 Oct 2026)
+## 10. Booking flow screen by screen (shortened on 26 Oct 2026)
 
-This is what the customer goes through today to book a driver, taken from walking the app on a
-phone and reading the code. **Nothing here is implemented yet; the right-hand column is a
-proposal for the owner to approve.**
+The driver booking used to take 8 steps between tapping **Drivers** and the confirmed booking, and
+showed the fare twice. After a screen-by-screen review on a phone it was cut to **3 steps** and
+tested end to end (booking 1010: book, confirm, driver completes, shown under Completed).
 
-| # | Screen today | Options on it | File | Proposal |
-|---|---|---|---|---|
-| 1 | Home | Drivers tile (others "Coming soon"), bottom tabs | `homePage/homePage.dart` | Keep |
-| 2 | Select ride type | One-way / Round trip tabs, In-city / Out-station cards, Next | `RideBooking/selectRideType.dart` | Merge into screen 3 as two toggles at the top |
-| 3 | Pickup and drop | Pickup (from GPS), drop row, Automatic / Manual, car types (SUV+, SUV, Sedan, Hatchback), Next | `RideBooking/selectLocationPage.dart` | Becomes the single booking screen |
-| 4 | Drop sheet | "Choose from favourites" list, "Select From Map" | `RideBooking/FavLocations.dart` | Show favourites inside screen 3; open the map only for a new place |
-| 5 | Map picker | Drag the map, "Select Location" | map pickers in `globalWidgets/` | Keep (needed for a new place) |
-| 6 | Date and time sheet | Today / tomorrow, time spinner, OK (asks the server for the estimate) | `dummy.dart` (class `Clock`) | Inline "When" row on screen 3, default to the next free slot |
-| 7 | Estimate page | Summary, fare, usage hours 1-3, Coupon, payment (Cash), Next | `homePage/components/OneWay.dart` | Merge with screen 8 |
-| 8 | Confirm sheet | Same fare again, date, hours, Confirm Ride | `homePage/components/confirmride.dart` | Merge with screen 7: one "Estimate and confirm" page |
-| 9 | My Bookings | Active / Completed / Cancelled tabs | `Bookings/` | Keep; after confirming, go straight to screen 10 |
-| 10 | Ride details | Map, ride OTP, driver, estimate price, cancel | `Bookings/bookingPageView.dart` | Keep |
+### 10.1 The flow now
 
-**Today:** 8 steps from tapping Drivers to the confirmed booking (2, 3, 4, 5, 6, 7, 8, plus the
-bookings list), with the fare shown twice (7 and 8).
+| # | Screen | What the customer does | File |
+|---|---|---|---|
+| 1 | **Home** | Taps **Drivers** (the other tiles say "Coming soon") | `homePage/homePage.dart` |
+| 2 | **Book a driver** (one screen) | Chooses One way / Round trip and In-city / Out-station; sees the pickup (from GPS) and taps the drop row (opens the map straight away, or the favourites list if the customer has saved favourites); checks the pickup time (the next free quarter-hour is already filled in, tap to change today/tomorrow and time); chooses Automatic / Manual and the car type; taps **Next**. The server calculates the fare here. | `RideBooking/selectLocationPage.dart` |
+| 3 | **Estimate and confirm** (one screen) | Sees trip summary and fare, can change the pickup time, hours (1-15), apply a coupon, then taps **Confirm Ride**. The booking is saved and My Bookings (Active Rides) opens. | `homePage/components/OneWay.dart` |
+| 4 | My Bookings, then Ride details | Follows the booking; ride OTP, driver, cancel | `Bookings/` |
 
-**Proposed:** 3 steps.
-1. **Book a driver** (screen 3 expanded): trip type toggles, pickup and drop with favourites,
-   gear and car type, date and time. The fare is requested automatically as soon as the details are
-   complete, and shown at the bottom of the same screen.
-2. **Estimate and confirm** (screens 7 + 8): fare breakdown, usage hours, coupon, payment, one
-   **Confirm Ride** button.
-3. **Ride details** (screen 10), opened directly after confirming.
+Sheets and pop-ups that remain: the map picker (needed to choose a new place), the date/time sheet
+(`dummy.dart`, class `Clock`: OK now only stores the choice and closes), the favourites list
+(`RideBooking/FavLocations.dart`) and the fare breakdown (`RideEstimateInfo.dart`, tap the fare).
 
-**Things to keep in mind when changing it:**
-- All choices live in `TripOptionsProvider` (`providers/riderProvider.dart`), so the merge is
-  mostly moving widgets, not changing data or server calls.
-- Round trip needs only the pickup (the driver returns to it); one-way needs pickup and drop.
-- The server still decides the price; the app must keep sending the same `get-estimate` fields.
-- Out-station trips use a different server fare, so the In-city / Out-station toggle must stay.
-- Back-button behaviour: today it clears the booking and returns Home; keep that on the merged
-  screen.
+### 10.2 What was removed or merged
+
+| Before | Now |
+|---|---|
+| "Select ride type" screen (`selectRideType.dart`) | Deleted; its two choices are toggles at the top of **Book a driver** |
+| Empty "Choose from favourites" sheet before the map | Skipped when the customer has no favourites (`globalWidgets/locationcard.dart`) |
+| Date/time sheet followed by a separate estimate step | Time is pre-filled on **Book a driver**; **Next** asks for the fare |
+| Estimate page plus "Confirm Ride" sheet (`confirmride.dart`) | Deleted; **Confirm Ride** is on the estimate page |
+
+### 10.3 Rules kept (so the booking still works)
+
+- All choices live in `TripOptionsProvider` (`providers/riderProvider.dart`); the server calls and
+  fields (`get-estimate`) are unchanged, and the server still decides the price.
+- Round trip needs only the pickup; one-way needs pickup and drop. Switching In-city /
+  Out-station clears the drop, because the allowed area differs.
+- **Next** is refused with a message if no car type loaded or the pre-filled time has passed
+  (the time sheet then opens).
+- Back on **Estimate and confirm** returns to **Book a driver** with every choice kept; back on
+  **Book a driver** abandons the booking and returns Home.
+- After a failed save the "save booking" flag is cleared, so changing the hours later cannot
+  create a booking by accident.
+- Not done: opening the ride details directly after confirming. The app still opens the
+  Bookings list, where the new ride is the first card.
+
+### 10.4 Bugs found and fixed on the way
+
+- `Twl.dateActual` always printed **today's** date, so a booking for tomorrow was shown as today
+  on the estimate page (the saved booking was correct). It now formats the date it is given.
+- The old confirm sheet left the "save booking" flag on after a failed save (see above).
+- After a rating was saved, the ride-details screens replaced themselves with Home but left the
+  earlier Bookings screens behind them, and the "Successfully updated" message was never shown.
+  Both rating forms now call `Twl.goHomeAfterRating`: thank-you message, then Home with the screen
+  stack cleared. Tested on the phone with booking 1011: rating saved in `user_booking_ratings`,
+  "Thanks for your rating" shown, Home opened, and Back left the app instead of reopening the ride.
 
 ---
 ## Live inventory (generated)
 
 <!-- AUTO:inventory:start -->
-_This block is generated by `tools/update_docs.py` (last run 2026-10-14). Do not edit it by hand._
+_This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
 
-- Source files: **150**
+- Source files: **148**
 - Server endpoints: **50**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**

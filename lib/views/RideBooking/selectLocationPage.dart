@@ -1,9 +1,12 @@
 // =============================================================================
-// WHAT : DRIVERS BOOKING step 2: pickup and drop addresses with a map; checks
-//        the service area.
-// NOTES: Server: check-boundary, vehicle-types.
+// WHAT : DRIVERS BOOKING step 1 (the single booking screen): trip type, pickup
+//        and drop with a map, gear and car type, pickup date and time; then
+//        asks the server for the fare and opens the estimate page.
+// NOTES: Server: check-boundary, vehicle-types, get-estimate. Replaces the old
+//        "Select ride type" screen and the separate date/time step.
 // =============================================================================
-import 'package:base_project_flutter/views/RideBooking/selectRideType.dart';
+import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
+import 'package:base_project_flutter/views/homePage/components/OneWay.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,9 +25,12 @@ import '../dummy.dart';
 import '../select_ridePage/components/one_wayPage/components/automatic_page.dart';
 
 // >>> START: SelectLocationPage - screen/widget shell (the visible part is in its State class)
-/// Step 2 of the Drivers booking: the customer sees the pickup address (taken
-/// from the phone's location), picks the drop address, chooses Automatic or
-/// Manual gears and a car type, then continues to the date/time sheet.
+/// The single booking screen of the Drivers service. The customer chooses
+/// One-way / Round trip and In-city / Out-station, sees the pickup address
+/// (taken from the phone's location), picks the drop address, chooses Automatic
+/// or Manual gears and a car type, and checks the pickup date and time (the
+/// next free slot is pre-filled). "Next" asks the server for the fare and opens
+/// the estimate page, where the ride is confirmed.
 class SelectLocationPage extends StatefulWidget {
   const SelectLocationPage({Key? key}) : super(key: key);
 
@@ -35,6 +41,97 @@ class SelectLocationPage extends StatefulWidget {
 
 // >>> START: _SelectLocationPageState - the data and logic behind its screen
 class _SelectLocationPageState extends State<SelectLocationPage> {
+  // >>> START: initState - pre-fills the pickup date and time
+  @override
+  void initState() {
+    super.initState();
+    // After the first frame, so the provider is not changed while building.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      applyDefaultPickupSlot(
+          Provider.of<TripOptionsProvider>(context, listen: false));
+    });
+  }
+  // <<< END: initState - pre-fills the pickup date and time
+
+  // >>> START: _goHome - abandons the booking and returns to Home
+  Future<bool> _goHome() async {
+    Provider.of<TripOptionsProvider>(context, listen: false)
+        .resetProviderValues();
+    Twl.forceNavigateTo(context, BottomNavigation(tabIndexId: 0));
+    // false: the navigation above already replaced this screen.
+    return false;
+  }
+  // <<< END: _goHome - abandons the booking and returns to Home
+
+  // >>> START: _choiceRow - a row of two choices (the selected one is filled)
+  Widget _choiceRow(List<String> labels, int selected, void Function(int) onSelect) {
+    return Row(
+      children: List.generate(labels.length, (i) {
+        final on = i == selected;
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => onSelect(i),
+            child: Container(
+              margin: EdgeInsets.all(3),
+              padding: EdgeInsets.symmetric(vertical: 1.1.h),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: on ? tPrimaryColor : tWhite,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(labels[i],
+                  style: TextStyle(
+                      color: on ? tWhite : tPrimaryColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: isTab(context) ? 10.sp : 12.sp)),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+  // <<< END: _choiceRow - a row of two choices (the selected one is filled)
+
+  // >>> START: _editTime - opens the date/time sheet and refreshes the screen
+  Future<void> _editTime() async {
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          Padding(padding: EdgeInsets.symmetric(horizontal: 0), child: Clock()),
+    );
+    if (mounted) setState(() {});
+  }
+  // <<< END: _editTime - opens the date/time sheet and refreshes the screen
+
+  // >>> START: _next - checks the choices, gets the fare and opens the estimate page
+  Future<void> _next(TripOptionsProvider provider) async {
+    if (provider.carModel.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No vehicles found. Please try again.')));
+      return;
+    }
+    // The pre-filled slot may have passed while the customer was choosing.
+    final when = pickupDateTimeOf(provider);
+    if (when == null || !when.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('please_select_future_time'.tr)));
+      applyDefaultPickupSlot(provider);
+      await _editTime();
+      return;
+    }
+    // Only the confirm button on the estimate page may save a booking.
+    provider.setSaveBooking(false);
+    final res = await provider.getEstimate(context);
+    if (!mounted) return;
+    if (res != null && res['status'] == 'OK') {
+      Twl.navigateTo(context, OneWay());
+    }
+  }
+  // <<< END: _next - checks the choices, gets the fare and opens the estimate page
+
   // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
@@ -63,37 +160,32 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                 pickupFilled);
 
     // Two tabs: Automatic / Manual (the gear type of the customer's car).
-    return DefaultTabController(
+    // The phone's back button abandons the booking and returns Home.
+    return WillPopScope(
+      onWillPop: _goHome,
+      child: DefaultTabController(
       length: 2,
       child: Scaffold(
-        // ---- Header: back arrow + "One way" / "Round trip" ----
+        // ---- Header: back arrow + "Book a driver" ----
         appBar: AppBar(
             elevation: 0,
             titleSpacing: 7,
             backgroundColor: tWhite,
             leading: GestureDetector(
                 onTap: () {
-                  // Back arrow: clear the booking and return to step 1.
-                  tripOptionsProvider.resetProviderValues();
-                  Twl.forceNavigateTo(context, SelectRideType());
+                  // Back arrow: clear the booking and return Home.
+                  _goHome();
                 },
                 child: Padding(
                   padding: EdgeInsets.all(isTab(context) ? 10 : 12.0),
                   child: BackIconWidget(),
                 )),
             centerTitle: true,
-            // The title follows the choice made in step 1.
-            title: tripOptionsProvider.riderType == RIDER_TYPE_ONEWAY
-                ? Text('one_way'.tr,
-                    style: GoogleFonts.mulish(
-                        color: tDarkNavyblue,
-                        fontWeight: FontWeight.w800,
-                        fontSize: isTab(context) ? 10.sp : 17.sp))
-                : Text('round'.tr,
-                    style: GoogleFonts.mulish(
-                        color: tDarkNavyblue,
-                        fontWeight: FontWeight.w800,
-                        fontSize: isTab(context) ? 10.sp : 17.sp))),
+            title: Text('Book a driver',
+                style: GoogleFonts.mulish(
+                    color: tDarkNavyblue,
+                    fontWeight: FontWeight.w800,
+                    fontSize: isTab(context) ? 10.sp : 17.sp))),
         // ---- Body: map in the background, cards stacked at the bottom ----
         body: Stack(
           children: [
@@ -120,6 +212,49 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                   height: 2.h,
                 ),
                 // -------------------------------------------------------
+                // CARD 0 - Trip type: One way | Round trip, and
+                // In-city | Out-station.
+                // -------------------------------------------------------
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 3.5.w),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: tWhite,
+                        boxShadow: [tBoxShadow],
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Column(
+                      children: [
+                        _choiceRow(
+                          ['one_way'.tr, 'round'.tr],
+                          tripOptionsProvider.riderType == RIDER_TYPE_ONEWAY
+                              ? 0
+                              : 1,
+                          (i) => tripOptionsProvider.setRiderType(
+                              i == 0 ? RIDER_TYPE_ONEWAY : RIDER_TYPE_ROUNDTRIP),
+                        ),
+                        _choiceRow(
+                          ['in_city'.tr, 'out_station'.tr],
+                          tripOptionsProvider.tripType == TRIP_TYPE_INTERCITY
+                              ? 0
+                              : 1,
+                          (i) {
+                            final type =
+                                i == 0 ? TRIP_TYPE_INTERCITY : TRIP_TYPE_OUTSTATION;
+                            if (type == tripOptionsProvider.tripType) return;
+                            tripOptionsProvider.setTripType(type);
+                            // A drop chosen for the other trip type may be
+                            // outside the allowed area: choose it again.
+                            tripOptionsProvider.setDropLocation("", "", "");
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 1.h,
+                ),
+                // -------------------------------------------------------
                 // CARD 1 - Pickup and drop addresses. Tapping a row opens a
                 // map picker (see LocationCards / pickupgoogleMap.dart /
                 // dropGoogleMap.dart).
@@ -135,6 +270,49 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                           pickupAddress: '${tripOptionsProvider.pickupAddress}',
                           dropAddress: '${tripOptionsProvider.dropAddress}',
                           tripStatus: '${tripOptionsProvider.tripType}')),
+                ),
+                SizedBox(
+                  height: 1.h,
+                ),
+                // -------------------------------------------------------
+                // CARD 1b - When: the pickup date and time (the next free
+                // slot is pre-filled). Tap to change it.
+                // -------------------------------------------------------
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 3.5.w),
+                  child: GestureDetector(
+                    onTap: _editTime,
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 3.5.w, vertical: 1.6.h),
+                      decoration: BoxDecoration(
+                          color: tWhite,
+                          boxShadow: [tBoxShadow],
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Row(
+                        children: [
+                          Icon(Icons.access_time, color: tPrimaryColor),
+                          SizedBox(width: 2.w),
+                          Expanded(
+                            child: Text(
+                              pickupDateTimeOf(tripOptionsProvider) == null
+                                  ? 'select_time'.tr
+                                  : Twl.dateActual(
+                                          tripOptionsProvider.pickupDate) +
+                                      ', ' +
+                                      tripOptionsProvider.pickupTime,
+                              style: GoogleFonts.mulish(
+                                  color: tDarkNavyblue,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: isTab(context) ? 10.sp : 13.sp),
+                            ),
+                          ),
+                          Icon(Icons.edit, size: 18, color: tPrimaryColor),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 // -------------------------------------------------------
                 // CARD 2 - "Automatic | Manual" tab bar. Choosing a tab
@@ -232,8 +410,8 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                       )
                     : Container(),
                 // -------------------------------------------------------
-                // "Next" button - opens the date and time sheet (Clock),
-                // which leads to the fare estimate and the confirmation.
+                // "Next" button - gets the fare from the server and opens the
+                // estimate page, where the ride is confirmed.
                 // -------------------------------------------------------
                 readyToContinue
                     ? Center(
@@ -251,18 +429,7 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                                     fontSize: isTab(context) ? 9.sp : 14.sp)),
                             onTap: (startLoading, stopLoading, btnState) async {
                               startLoading();
-                              // Open the "select date and time" sheet.
-                              showModalBottomSheet(
-                                isScrollControlled: true,
-                                context: context,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => Padding(
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 0),
-                                    child: Clock()),
-                              );
-
-                              setState(() {});
+                              await _next(tripOptionsProvider);
                               stopLoading();
                             },
                           ),
@@ -276,6 +443,7 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

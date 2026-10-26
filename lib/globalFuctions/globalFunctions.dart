@@ -13,7 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sizer/sizer.dart';
 import '../constants/constants.dart';
 import '../views/Bookings/components/rideDetailsView/components/rideInfo.dart';
-import '../views/RideBooking/selectRideType.dart';
+import '../views/RideBooking/selectLocationPage.dart';
 import '../views/bottomNavigation.dart/bottomNavigation.dart';
 
 
@@ -254,6 +254,19 @@ class Twl {
   }
   // <<< END: forceNavigateTo - opens a screen and removes the ones behind it
 
+  // >>> START: goHomeAfterRating - thanks the customer and returns to Home
+  /// Called after a rating has been saved: shows a thank-you message and opens
+  /// Home with no earlier screen left behind it, so Back never returns to the
+  /// finished ride.
+  static void goHomeAfterRating(BuildContext context) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Thanks for your rating')));
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => BottomNavigation(tabIndexId: 0)),
+        (route) => false);
+  }
+  // <<< END: goHomeAfterRating - thanks the customer and returns to Home
+
   // >>> START: dateFormate - date formate
   static dateFormate(now) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd');
@@ -284,7 +297,10 @@ class Twl {
   static dateActual(now) {
     final DateFormat formatter = DateFormat('dd-MM-yyyy');
 
-    final String formatted = formatter.format(DateTime.now());
+    // Formats the date it is given (it used to always print today's date, so
+    // a booking for tomorrow was shown as today).
+    final DateTime date = DateTime.tryParse(now.toString()) ?? DateTime.now();
+    final String formatted = formatter.format(date);
     return formatted;
   }
   // <<< END: dateActual - date actual
@@ -622,7 +638,7 @@ class Twl {
                                 onTap: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => SelectRideType()),
+                                    MaterialPageRoute(builder: (context) => SelectLocationPage()),
                                   );
                                 },
                                 child: Container(
