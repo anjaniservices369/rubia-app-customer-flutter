@@ -1,7 +1,8 @@
 // =============================================================================
 // WHAT : HOME: shows the live services, banners and the current address.
-// NOTES: By default only Driver is shown (see AppScreens). Other tiles stay
-//        hidden until showComingSoonServices is turned on.
+// NOTES: Shows the live services (Driver and Taxi, from the server's list; see
+//        AppScreens). Other tiles stay hidden until showComingSoonServices is
+//        turned on.
 // =============================================================================
 import 'package:base_project_flutter/api_services/servicesApi.dart';
 import 'package:base_project_flutter/api_services/userApi.dart';
@@ -26,6 +27,7 @@ import '../../constants/constants.dart';
 import '../../globalFuctions/globalFunctions.dart';
 
 import '../RideBooking/selectLocationPage.dart';
+import '../../taxi/taxiBookingPage.dart';
 
 // >>> START: HomePage - home screen: services, banners and address
 class HomePage extends StatefulWidget {
@@ -642,6 +644,14 @@ class _HomePageState extends State<HomePage> {
         break;
 
       case TAXI:
+        // Uber / Rapido style flow: Bike, Auto and Taxi in one booking screen.
+        tripOptionsProvider.setServiceType('TAXI');
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TaxiBookingPage()),
+        );
+        break;
+
       case AUTO:
       case BIKE:
         if (!AppScreens.showComingSoonServices) {

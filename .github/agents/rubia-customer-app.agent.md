@@ -19,7 +19,7 @@ You are the specialist for the **Rubia Customer App**, a Flutter app (package `b
 - `lib/api_services/`: all server calls (`userApi.dart`, `servicesApi.dart`, `ApiHelper.dart`); `lib/constants/apiConstants.dart` lists endpoints.
 - `lib/providers/riderProvider.dart`: booking state and `getEstimate`.
 - `lib/views/`: screens (login/OTP, `homePage`, `select_ridePage`, `Bookings`, `WalletPage`, `profilePage`, `PersonalDetails`); `translation.dart` holds texts in 5 languages.
-- `lib/taxiservices/`: built but hidden; Driver and Taxi services are different products.
+- `lib/taxi/`: the Taxi flow (Bike/Auto/Taxi list, ride screen, map picker, `TaxiApi`); `lib/taxiservices/` is the old unused Taxi code. Live service cards are `liveServiceTypes` in `lib/constants/appScreens.dart` (Driver, Taxi).
 - Backend (PHP/Yii) is in `../rubia-backend-php`, the driver app in `../rubia-app-driverpartner-flutter`, SQL dumps in `../rubia-data-sql-dumps`.
 
 ## Build and run on a physical Android device
@@ -30,8 +30,9 @@ You are the specialist for the **Rubia Customer App**, a Flutter app (package `b
 5. Verify the app is running with `adb shell pidof com.rubia.user` before reporting success.
 
 ## Local backend for testing
-- Start the PHP server from `../rubia-backend-php/app` with `php -S 127.0.0.1:8080 -t . index.php`, with `YII_ENV=dev`, `YII_DEBUG=0`, `OTP_TEST_NUMBERS=<customer>,<driver>`, `OTP_TEST_CODE=<code>`, `-d error_reporting=8191` (PHP 8.2 deprecations otherwise break the estimate) and `-d curl.cainfo=<cacert.pem>` (no CA bundle on this PHP).
+- Start the PHP server from `../rubia-backend-php/app` with `php -S 127.0.0.1:8080 -t . index.php`, with `YII_ENV=dev`, `YII_DEBUG=1` (taxi `/api/car-user` etc. fail with debug off), `OTP_TEST_NUMBERS=<customer>,<driver>`, `OTP_TEST_CODE=<code>`, `-d error_reporting=8191` (PHP 8.2 deprecations otherwise break the estimate) and `-d curl.cainfo=<cacert.pem>` (no CA bundle on this PHP).
 - The backend DB DSN is `mysql:host=127.0.0.1;port=3308;dbname=rubia_website`. If nothing listens on 3308, run `mysql:8.4` in Docker on that port (empty root password) and import the dumps from `../rubia-data-sql-dumps`.
+- Run the MySQL container on India time (`--default-time-zone=+05:30` or `SET GLOBAL time_zone='+05:30'`), otherwise taxi rides expire at once. Taxi testing also needs Hyderabad `pincode` rows and a `ride_commision` price card (PROJECT_GUIDE.md 7.2). Taxi test driver: 7013928987 (`/api/car/*`: verify-otp, update-lat-lng, update-online-status, accept-or-reject status=4, change-status 5/6/8(otp)/9).
 - Test OTP login works only in dev mode from the local machine for numbers on the allow-list; the verify field is `otp_code`.
 - Backend errors are in `../rubia-backend-php/app/runtime/logs/app.log`; Google Distance Matrix/Routes may return REQUEST_DENIED (the fare still works).
 

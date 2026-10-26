@@ -37,7 +37,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | File | What it does | Notes |
 |---|---|---|
 | `apiConstants.dart` | The server address and the path of every API call. | apiBaseUrl can be changed at build time with --dart- define=API_BASE_URL=... (default is the live server). Base Url const String apiBaseUrl = 'https://system.rubia.services/api'; Override for local testing, e.g. an emulator talking to a PC backend: --dart-define=API_BASE_URL=http://10.0.2.2:8080/api |
-| `appScreens.dart` | The small set of screens this app actually ships today. | Rubia customers book a Driver. Taxi/Auto/Bike and other tiles exist in code but are not live. Flip the flags below when a product should appear. Screen-by-screen work follows this list. |
+| `appScreens.dart` | The small set of screens this app actually ships today. | Rubia customers book a Driver or a Taxi (bike / auto / car, Uber and Rapido style). The cards come from the server's services list; only the types below are shown. Other tiles exist in code but are not live. Flip the flags below when a product should appear. |
 | `constants.dart` | App-wide settings: brand colours, booking status numbers and their meaning, trip/car types, service types (Driver, Taxi, Auto, Bike). | The status numbers must match the server. TAXI_STATUS_* are the taxi ride statuses of the server (no Firebase involved). |
 | `imageConstant.dart` | Names of the picture files (icons, banners, logos) used in the app. | The files themselves are in the assets/ folder. >>> START: Images - helper class |
 
@@ -92,6 +92,15 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `riderProvider.dart` | The app's trip memory (class TripOptionsProvider): everything chosen during a booking - pickup, drop, date, time, car type, hours, coupon, payment method, fare estimate. | Also holds the live taxi-ride state. Screens read it to stay in sync as the customer moves through the booking steps. |
 | `taxiProvider.dart` | Placeholder holder for taxi vehicles. | **UNUSED: no screen imports it** Almost empty; not used by the live flow. |
 | `themeProvider.dart` | Light/dark theme choice. | Currently not exposed to the customer. |
+
+## `taxi`
+
+| File | What it does | Notes |
+|---|---|---|
+| `taxiApi.dart` | TAXI (Uber / Rapido style): everything the new taxi booking flow asks the server: vehicles with fares, ride request, driver search, live ride status, cancel and rating. | Rubia runs taxi as three services with their own rider addresses: /bike-user, /auto-user and /car-user. One screen lists all three (Bike, Auto, Taxi) by asking each of them. The id and service of the ride in progress are saved on the phone so the ride resumes. |
+| `taxiBookingPage.dart` | TAXI (Uber / Rapido style) booking screen: a full-screen map with a bottom card. The rider sees the pickup (from GPS), taps "Where to?" to choose the drop on the map, then picks Bike, Auto or Taxi from a list with fare, seats and trip time, and books it. | Opens from the Taxi card on Home. A ride still in progress is reopened instead (see TaxiApi.active). Booking sends the rider to TaxiRidePage. |
+| `taxiPlacePicker.dart` | TAXI: full-screen map where the rider moves the map under a centre pin to choose the pickup or drop; the address and pincode of the pinned spot are shown and returned when the rider confirms. | Addresses come from the phone's own geocoder (no key needed). Also holds describePlace(), which turns a position into a TaxiPlace. |
+| `taxiRidePage.dart` | TAXI (Uber / Rapido style) ride screen. After booking it follows the ride on a map and changes its bottom card with the ride's status: finding a driver (with Cancel) -> driver on the way (driver, vehicle, OTP, call) -> ride in progress -> ride completed (fare, rating). | Asks the server for the ride every 3 seconds and offers it to nearby drivers again every 30 seconds while nobody has accepted. Status numbers match RideRequest::STATUS_* on the server (TAXI_STATUS_*). |
 
 ## `taxiservices`
 
@@ -265,7 +274,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 |---|---|---|
 | `couponbottomsheet.dart` | Bottom sheet listing available coupons. | Choosing one applies a discount. |
 | `drawer.dart` | Side menu with the customer's name and shortcuts. | **UNUSED: no screen imports it** Visual component. |
-| `homePage.dart` | HOME: shows the live services, banners and the current address. | By default only Driver is shown (see AppScreens). Other tiles stay hidden until showComingSoonServices is turned on. |
+| `homePage.dart` | HOME: shows the live services, banners and the current address. | Shows the live services (Driver and Taxi, from the server's list; see AppScreens). Other tiles stay hidden until showComingSoonServices is turned on. |
 
 ## `views/homePage/components`
 

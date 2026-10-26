@@ -1,8 +1,9 @@
 // =============================================================================
 // WHAT : The small set of screens this app actually ships today.
-// NOTES: Rubia customers book a Driver. Taxi/Auto/Bike and other tiles exist
-//        in code but are not live. Flip the flags below when a product should
-//        appear. Screen-by-screen work follows this list.
+// NOTES: Rubia customers book a Driver or a Taxi (bike / auto / car, Uber and
+//        Rapido style). The cards come from the server's services list; only
+//        the types below are shown. Other tiles exist in code but are not
+//        live. Flip the flags below when a product should appear.
 // =============================================================================
 
 import 'constants.dart';
@@ -13,7 +14,7 @@ class AppScreens {
 
   /// Live service tiles on Home. Everything else is hidden unless
   /// [showComingSoonServices] is true.
-  static const Set<int> liveServiceTypes = {DRIVER};
+  static const Set<int> liveServiceTypes = {DRIVER, TAXI};
 
   /// When false, Home only shows live services (Driver). When true, the old
   /// "Coming soon" grid (Taxi, Auto, Bike, Hotel, Jobs…) is shown again.

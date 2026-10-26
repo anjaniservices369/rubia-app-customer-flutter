@@ -8,9 +8,10 @@ Last updated: 26 Oct 2026.
 ## 1. What this app is
 
 The **Rubia Customer App** is the Android/iOS app that Rubia's *customers* use.
-Today it is mainly used to **book a professional driver** who drives the customer's own car
-("Rubia Driver" service). The home screen also has tiles for Taxi, Auto, Bike, Hotel, Jobs, Real
-Estate, Travel and Home Services, but these show **"Coming soon"** except Drivers.
+Today it offers two services on the home screen, both cards coming from the server's services list:
+**Drivers** (book a professional driver who drives the customer's own car, "Rubia Driver") and
+**Taxi** (instant rides in the style of Uber and Rapido: Bike, Auto or Taxi, see section 11). The
+other tiles (Auto, Bike, Hotel, Jobs, Real Estate, Travel and Home Services) stay hidden.
 
 The app talks to the **Rubia server** (the "backend"), which holds all data: customers, drivers,
 bookings, wallets, prices. The app itself stores almost nothing.
@@ -90,7 +91,8 @@ lib/
     WalletPage                 Wallet
     profilePage                Profile, favourites, contacts, notifications
     translation.dart           All text in 5 languages
-  taxiservices/              The Taxi service screens (built, currently hidden)
+  taxi/                      The Taxi flow (Uber / Rapido style), see section 11
+  taxiservices/              Older Taxi screens for the retired /taxi-user address (not used)
   globalWidgets/             Reusable pieces (buttons, map pickers, cards)
   globalFuctions/            Shared helper functions
   periodic_notification/     Background status check after a booking
@@ -186,13 +188,24 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
    real names again, so repeat the clean-up after importing.
 2. **Backend:** from `../rubia-backend-php/app` run `php -S 127.0.0.1:8080 -t . index.php` with
    these environment variables and options (nothing in the code is changed):
-   - `YII_ENV=dev`, `YII_DEBUG=0`
+   - `YII_ENV=dev`, `YII_DEBUG=1`. (With `YII_DEBUG=0` the taxi rider addresses `/api/car-user`,
+     `/api/auto-user`, `/api/bike-user` answered "internal server error" on this PHP server; the
+     Driver service worked in both modes.)
    - `OTP_TEST_NUMBERS=<customer number>,<driver number>` and `OTP_TEST_CODE=<4 digits>`: a dev-only
      test login that skips the SMS. It works only in dev mode and only from the same machine.
    - `-d error_reporting=8191`: PHP 8.2 warns about `strtotime(null)` in the fare code and that
      warning otherwise makes the estimate fail.
    - `-d curl.cainfo=<cacert.pem>` and `-d openssl.cafile=<cacert.pem>`: this PHP has no
      certificate list, so calls to Google fail without it.
+   - The database container must run on **India time**: start it with `--default-time-zone=+05:30`
+     (or run `SET GLOBAL time_zone = '+05:30'`). The backend runs on Asia/Kolkata while a Docker
+     MySQL defaults to UTC, and the taxi dispatcher compares the two: every new taxi ride looked
+     5½ hours old and was cancelled as "No driver accepted the ride within 120 seconds" at once.
+   - **Taxi data for testing** (dev database only): service-area rows in `pincode` for Hyderabad
+     (500001-500100) and bike, auto and taxi (`vehical_id` 4, 5, 6), and a car-taxi price card in
+     `ride_commision` for city 8 (vehicle 2: base ₹40, 2 km included, ₹14/km, ₹1.5/min). Bike and
+     auto already had price cards. The test taxi driver is the existing `taxi` account
+     **7013928987** (add it to `OTP_TEST_NUMBERS`).
 3. **Phone:** `adb reverse tcp:8080 tcp:8080`, then build and install the app with
    `--dart-define=API_BASE_URL=http://localhost:8080/api`.
 4. **Customer in the app:** the test customer is **9999900001, named Veera** (code 1234 through the
@@ -230,8 +243,9 @@ kept out of git through `.git/info/exclude`, so they are never committed by acci
    backend package is deployed (see the backend's `DEPLOY.md`).
 2. **Dispatch to drivers** needs a scheduled job (cron) on the server to offer new bookings to
    online drivers. Without it, the Partner app shows "No Bookings found".
-3. **Taxi, Auto, Bike are "Coming soon"** because the home screen opens only the first tile.
-   Enabling them is a product decision plus a small code change.
+3. **Auto and Bike cards are hidden.** The server lists Auto and Bike as services of their own, but
+   the app offers them inside the Taxi flow (Bike, Auto and Taxi in one list), so only the Taxi
+   card is shown. Hotel, Jobs and the other tiles stay hidden (`lib/constants/appScreens.dart`).
 4. **Fixed pincode 500081** is sent in booking and estimate requests. If Rubia expands beyond
    one area the real pincode of the picked address should be sent.
 5. **Keys in the code.** A Google Maps key and a token are stored in
@@ -393,12 +407,66 @@ asked for the moment the ride completes (`views/Bookings/components/rateRide.dar
   shows no completion message; adding that is a separate change.
 
 ---
+
+## 11. Taxi (Uber / Rapido style instant rides)
+
+The **Taxi** card on Home (the server lists it as service type 2) opens `lib/taxi/`. One screen
+offers all three vehicle kinds, the way Uber and Rapido do, instead of three separate products.
+
+### 11.1 The flow (3 screens)
+
+1. **Booking screen** (`taxiBookingPage.dart`): full-screen map with the pickup pin on the current
+   location. "Where to?" opens a map picker (`taxiPlacePicker.dart`, a centre pin and Confirm);
+   the pickup can be changed the same way. After a drop is chosen the screen lists **Bike, Auto and
+   Taxi** with fare, ETA, seats and distance (live from the server). The customer picks one,
+   sees "Pay by cash", and taps **Book X · ₹N**.
+2. **Ride screen** (`taxiRidePage.dart`), refreshed every 3 seconds, one card per ride status:
+   - *Finding your taxi...* (radar, route on the map, **Cancel ride** with a confirmation);
+   - *Driver accepted / on the way / arrived*: driver name, vehicle, number, **OTP** to tell the
+     driver, **call** button, Cancel;
+   - *Trip started*; *Completed*: "Please pay ₹N" and a 5-star rating with a comment, then Home;
+   - *Cancelled / no driver available* (the server gives up after 120 seconds): **Back to Home**.
+   While searching, the app asks the server to offer the ride again about every 30 seconds.
+3. **Resume**: the open ride is remembered on the phone (`taxi_active_ride`). If the customer
+   leaves (Back) and taps Taxi again, the ride screen reopens; a finished or cancelled ride clears
+   it.
+
+### 11.2 Server calls
+
+The rider addresses differ per vehicle: `/api/bike-user/` (service type 4), `/api/auto-user/`
+(type 3), `/api/car-user/` (type 2, shown as "Taxi"). Each has `get-vehicles` (fare list),
+`ride-request`, `auto-assign` (offers the ride to nearby drivers), `ride-request-detail`,
+`cancel-ride` and `add-rating`. All are wrapped in `TaxiApi` (`taxiApi.dart`).
+
+Ride statuses: 1 new, 2 booked, 3 cancelled by rider, 4 accepted, 5 on the way, 6 arrived,
+7 cancelled by driver or expired, 8 started, 9 completed, 10 paid. The ride JSON's `total_fare` is
+the customer's fare (`final_price` is the driver's share, as in the Driver service).
+
+### 11.3 Tested on the phone (26 Oct 2026)
+
+Home shows the Drivers and Taxi cards from the server; the fare list showed Bike ₹19, Auto ₹21,
+Taxi ₹44-47. Full ride: book, finding a driver, accepted with OTP, on the way, arrived, started,
+completed ("Please pay ₹49"), rating saved (ride 124), Home. Also checked: **cancel** while
+searching (ride 125 became status 3), **resume** after Back, and **no driver** (ride expired after
+2 minutes with "No driver is available right now").
+The driver side was played through the taxi driver API (`/api/car/`: `update-lat-lng`,
+`update-online-status`, `accept-or-reject`, `change-status`) as the taxi test driver 7013928987.
+Setting up the database and backend for this is in section 7.2.
+
+### 11.4 Not done yet
+
+- Destination text search and recent places (the drop is chosen on the map only).
+- Online payment (cash only), driver live position on the map, and a Home banner for an open ride.
+- Bike and Auto were priced and listed but only the Taxi ride was driven end to end (a test driver
+  with a bike or auto vehicle is needed).
+
+---
 ## Live inventory (generated)
 
 <!-- AUTO:inventory:start -->
 _This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
 
-- Source files: **149**
+- Source files: **153**
 - Server endpoints: **50**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**
