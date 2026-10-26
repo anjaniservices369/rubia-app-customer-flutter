@@ -23,6 +23,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `pushService.dart` | Push notifications through OneSignal: registers the phone and passes its id to the server. | The server uses that id to send alerts (booking accepted, driver arrived, etc.). Only the public App ID is in the app; the secret REST key must stay on the server. |
 | `servicesApi.dart` | Server requests for the booking journey: list of services, fare estimate (also saves the booking), coupons and cancellation charges. | The estimate call with saveBooking=true is what actually creates a booking. |
 | `sessionGuard.dart` | Logs the customer out automatically when the server says the login is no longer valid (expired after 90 days, replaced by a newer login, or unknown). | Clears saved data and returns to the login screen. Called from ApiHelper. |
+| `transactionsApi.dart` | Asks the server for the customer's transactions of one month, across every service (Driver, Bike, Auto, Car) and the Wallet. | Server: /api/user/my-transactions?month=YYYY-MM. The answer is already grouped by day and carries the month totals and the last 6 months. |
 | `userApi.dart` | List of every request the customer app can make to the server: login/OTP, profile, wallet, bookings, favourites, emergency contacts, notifications, coupons, ride status. | Each method = one server endpoint. The endpoint addresses live in constants/apiConstants.dart. |
 
 ## `background_services`
@@ -248,6 +249,12 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `rideBill.dart` | Bill breakdown shown for the estimate. | Visual component. |
 | `selectLocationPage.dart` | DRIVERS BOOKING step 1 (the single booking screen): trip type, pickup and drop with a map, gear and car type, pickup date and time; then asks the server for the fare and opens the estimate page. | Server: check-boundary, vehicle-types, get-estimate. Replaces the old "Select ride type" screen and the separate date/time step. |
 
+## `views/Transactions`
+
+| File | What it does | Notes |
+|---|---|---|
+| `myTransactionsPage.dart` | "My Transactions" screen of the Profile tab: everything the customer paid or received, across every service (Driver, Bike, Auto, Car and the Wallet), grouped by day, with a total for each month. | Pick a month from the strip at the top (the last 6 months, each with its total); a summary card shows the month's total and the split by service; chips narrow the list to one service. Data comes from TransactionsApi (/api/user/my-transactions). |
+
 ## `views/WalletPage`
 
 | File | What it does | Notes |
@@ -332,7 +339,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `AllOptionsCard.dart` | List of options on the profile tab (favourites, wallet, refer, support...). | Navigation only. |
+| `AllOptionsCard.dart` | List of options on the profile tab (My Transactions, notifications, favourites, emergency contacts, refer, support...). | Navigation only. |
 | `ProfileCard.dart` | Profile header card; changing the photo uploads it to the Rubia server. | Server: media/upload, update-profile-pic. |
 | `Terms&conditionsCard.dart` | Terms and conditions text. | Visual component. |
 | `addcontact.dart` | Add an emergency contact. | Server: add-emergency-contact. |

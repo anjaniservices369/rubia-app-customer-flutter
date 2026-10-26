@@ -1,11 +1,11 @@
 // =============================================================================
-// WHAT : List of options on the profile tab (favourites, wallet, refer,
-//        support...).
+// WHAT : List of options on the profile tab (My Transactions, notifications,
+//        favourites, emergency contacts, refer, support...).
 // NOTES: Navigation only.
 // =============================================================================
-import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
 
 import 'package:base_project_flutter/views/profilePage/components/AllOptionsComponents/ReferAndEarn.dart';
+import 'package:base_project_flutter/views/Transactions/myTransactionsPage.dart';
 import 'package:base_project_flutter/views/profilePage/components/emergencyContactPage.dart';
 import 'package:base_project_flutter/views/profilePage/components/notifactionPage.dart';
 import 'package:flutter/material.dart';
@@ -49,18 +49,15 @@ class _AllOptionsCardState extends State<AllOptionsCard> {
                 children: [
                   ListTile(
                     onTap: () {
-                      Twl.navigateTo(
-                          context,
-                          BottomNavigation(
-                            tabIndexId: 1,
-                          ));
+                      // Every service's payments in one place, by day and by month.
+                      Twl.navigateTo(context, const MyTransactionsPage());
                     },
                     leading: Image.asset(
                       Images.MY_RIDES,
                       scale: 3.5,
                     ),
                     title: Text(
-                      'myrides'.tr,
+                      'my_transactions'.tr,
                       style: TextStyle(color: tSecondaryColor),
                     ),
                   ),

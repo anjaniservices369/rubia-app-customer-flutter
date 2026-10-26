@@ -27,6 +27,8 @@ const String PERSONAL_DETAILS = '/user/update-profile?auth_code=';
 const String UPDATE_PROFILE_PIC = '/user/update-profile-pic?auth_code=';
 // Terms / Privacy / Refund text written in the admin dashboard (no login needed).
 const String LEGAL_PAGE = '/user/legal-page?type=';
+// Everything the customer paid in one month, across all services (add &month=YYYY-MM).
+const String MY_TRANSACTIONS = '/user/my-transactions?auth_code=';
 const String SERVICES = '/user/services?auth_code=';
 const String CANCELLATION_CHARGES = '/user/cancellation-charges?auth_code=';
 //Notification

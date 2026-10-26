@@ -19,7 +19,8 @@ You are the specialist for the **Rubia Customer App**, a Flutter app (package `b
 - `lib/api_services/`: all server calls (`userApi.dart`, `servicesApi.dart`, `ApiHelper.dart`); `lib/constants/apiConstants.dart` lists endpoints.
 - `lib/providers/riderProvider.dart`: booking state and `getEstimate`.
 - `lib/views/`: screens (login/OTP, `homePage`, `select_ridePage`, `Bookings`, `WalletPage`, `profilePage`, `PersonalDetails`); `translation.dart` holds texts in 5 languages.
-- `lib/taxi/`: the Taxi flow (Bike / Auto / Car service cards, booking, ride screen, map picker, `TaxiApi`); each taxi service has its own backend address (`/bike-user`, `/auto-user`, `/car-user`); drivers are "taxi drivers" in the UI; `lib/taxiservices/` is the old unused Taxi code. Live service cards are `liveServiceTypes` in `lib/constants/appScreens.dart` (Driver, Taxi).
+- `lib/taxi/`: the Taxi flow (Bike / Auto / Car service cards, booking, ride screen, map picker, `TaxiApi`); each taxi service has its own backend address (`/bike-user`, `/auto-user`, `/car-user`); drivers are "taxi drivers" in the UI; `lib/taxiservices/` is the old unused Taxi code.
+- Profile tab: "My Transactions" (`lib/views/Transactions/`, `lib/api_services/transactionsApi.dart`) lists every service's payments by day and month from `/api/user/my-transactions`. Terms/Privacy/Refund text comes from the admin dashboard per app (`lib/globalWidgets/legalDocumentPage.dart`, `/api/user/legal-page`). Both are in PROJECT_GUIDE.md sections 12 and 13. Live service cards are `liveServiceTypes` in `lib/constants/appScreens.dart` (Driver, Taxi).
 - Backend (PHP/Yii) is in `../rubia-backend-php`, the driver app in `../rubia-app-driverpartner-flutter`, SQL dumps in `../rubia-data-sql-dumps`.
 
 ## Build and run on a physical Android device

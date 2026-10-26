@@ -55,6 +55,8 @@ There are **three separate apps / systems** that work together:
     Bookings → Completed, but the customer is not asked again for that ride.
 10. **Pay** → cash or wallet.
 11. **Cancel** (optional) → the customer can cancel; a cancellation fee may apply.
+12. **Profile → My Transactions** → every payment across Driver, Bike, Auto, Car and the Wallet, by
+    day and by month (section 13).
 
 ---
 
@@ -520,36 +522,91 @@ Second run (customer 7147, Veera): photo chosen from the gallery, gender Female,
 ### 12.4 Terms and Conditions, Privacy Policy and Refund Policy (written in the admin dashboard)
 
 The three texts are no longer a website link: they are **documents the Rubia team edits in the
-admin dashboard** and the app shows them in its own screen.
+admin dashboard** and the app shows them in its own screen. **Every app keeps its own set** (the
+customer app, the Driver partner app, and the Car, Auto and Bike taxi partner apps); a page belongs
+to exactly one app (`page.app_key`).
 
-- **Edit:** customer dashboard → **Customers → Terms & Policies** (`/admin/page`). Create a page,
-  choose the type (**Terms and Condition**, **Privacy** or **Refund Policy**), set the state to
-  **Active**, write the text in the editor and save. If several active pages share a type, the
+- **Edit:** dashboard menu **Terms & Policies** (`/admin/page`, super admin, on the main and the
+  customer dashboard). Create a page, choose the **App** (Customer app, Driver partner app,
+  Car / Auto / Bike taxi partner app), the type (**Terms and Condition**, **Privacy** or **Refund
+  Policy**), set the state to **Active**, write the text in the editor and save. The list shows the
+  App and Type columns with filters. If several active pages share the same app and type, the
   newest one is used; set an old one to *In Active* to retire it. Editing needs no app release.
-- **Server:** `GET /api/user/legal-page?type=terms|privacy|refund` (no login, so it also works
-  before login). It returns title, the editor's HTML and the last-updated date; if nothing active
-  exists it answers "This page has not been published yet".
+- **Server (one public endpoint per app, no login, so it works before login):**
+  `GET /api/user/legal-page?type=terms|privacy|refund` (customer app, the one this app uses),
+  `/api/driver/legal-page` (Driver partner app), `/api/car/legal-page`, `/api/auto/legal-page`,
+  `/api/bike/legal-page` (taxi partner apps). Each returns only its own app's page: title, the
+  editor's HTML and the last-updated date; if nothing active exists it answers "This page has not
+  been published yet". The partner apps in the other projects still have to call theirs.
 - **App:** `globalWidgets/legalDocumentPage.dart` loads it and draws the HTML with scripts off and
   links blocked. Opened from the **Terms&Conditions** link on Login and from the three links on
   the Profile tab. Shows the server's message with **Try again** when the page is missing or the
   phone is offline.
-- **Backend files:** `UserAppActions.php` (`actionLegalPage`), the access lists in both
-  `customerapp/.../UserController.php` and `services/haltingdriver/customer-backend/.../UserController.php`
-  (the shared dev process uses the second one), `models/base/Page.php` (new type *Refund Policy* = 4)
-  and `app/modules/admin/views/partials/nav.php` (menu link). The dashboard Page screens already existed.
+- **Backend files:** `models/LegalPageApi.php` (the shared answer) and `models/base/Page.php`
+  (app list, `findPublished`, type *Refund Policy* = 4); `UserAppActions.php`, the Driver
+  `DriverController.php` and the taxi `TaxiController.php` (`actionLegalPage`); the access lists
+  (`'legal-page'`) in `customerapp/.../UserController.php`,
+  `services/haltingdriver/customer-backend/.../UserController.php` (the shared dev process uses this
+  one), and the two partner controllers; the dashboard Page screens (form, list, view, search) and
+  `partials/nav.php`; migration `m261026_120101_PageAppKey` adds `page.app_key` (existing pages
+  become Customer app pages).
+- **After pulling these backend changes:** run the migration, run `php yii service/pack --customer`
+  (it adds `LegalPageApi` to `customer/backend/classmap.php`, already done in the repo) and clear
+  `app/runtime/cache`, otherwise Yii still has the old table layout cached ("Unknown Property").
 - **Local test:** the customer dashboard runs from `app/web/customer-dashboard.php`
   (`php -S 127.0.0.1:8091 -t web web/customer-dashboard.php`, same environment as the API server).
   Only the super admin emails in `params.php` (`superAdminEmails`) can log in. The dev database
-  holds one **sample** Terms page (typed through the dashboard form); Privacy and Refund are
-  unpublished. **The real legal text still has to be entered by the Rubia team.** The old website
-  addresses (`/terme and conditions.html` etc.) only showed the site's app-download block; the real
-  website pages are `/TermsConditions/`, `/Privacypolicy/` and `/RefundPolicy/`.
+  holds **sample** pages typed through the dashboard form: Terms for the Customer app, the Driver
+  partner app and the Car taxi partner app (each with different text, checked through the five
+  endpoints: each returns only its own, Auto and Bike answer "not published yet"); Privacy and
+  Refund are unpublished. **The real legal text still has to be entered by the Rubia team, per
+  app.** The old website addresses (`/terme and conditions.html` etc.) only showed the site's
+  app-download block; the real website pages are `/TermsConditions/`, `/Privacypolicy/` and
+  `/RefundPolicy/`.
 
 ### 12.5 Not done yet
 
 - No version tracking: customers are not asked to accept a changed version of the terms again.
 - The editor is a rich-text box (CKEditor); there is no per-language text, so every language
   sees the same document.
+- The Driver and taxi partner apps (other projects) do not show these pages yet; only the
+  endpoints exist.
+
+---
+
+## 13. My Transactions (Profile tab, every service in one place)
+
+Because the app now has several services, the Profile option **My Rides** became **My Transactions**
+(`views/Transactions/myTransactionsPage.dart`). It lists what the customer paid or received across
+**Driver bookings, Bike / Auto / Car rides and the Wallet**, by date and by month.
+
+- **Screen:** a strip of the **last 6 months** (each with its total; scroll left for older ones, this
+  month is on the right); a **summary card** for the chosen month (total spent, money added to the
+  wallet, number of transactions, split by service); **filter chips** (All, Driver, Bike, Auto, Car,
+  Wallet); then the **days**, newest first, each with its total and its rows (service icon, title,
+  drop address or reason, amount, time; payments shown as `-₹`, wallet credits as green `+₹`).
+  Pull down to refresh; "Try again" if the server cannot be reached.
+- **What counts:** completed Driver bookings (the customer's bill, `subtotal`, not the driver's
+  share), completed or paid taxi rides (`total_fare`), and wallet recharges, referral earnings and
+  cancellation charges. Wallet debits that merely pay for a ride are left out so a ride is never
+  counted twice. Cancelled or unfinished bookings and rides are not transactions.
+- **Server:** `GET /api/user/my-transactions?month=YYYY-MM` (login needed; month defaults to this
+  month). One call returns the month's `summary`, the `days` with their items, and `monthly` (the
+  last 6 months' totals). Each source (bookings, taxi rides, wallet) is read on its own, so a
+  service that cannot be read is skipped and the rest still show. Code: `actionMyTransactions` in
+  `UserAppActions.php`, allowed in both user controllers.
+- **Where did My Bookings go?** The Profile menu no longer opens it. It is still reachable from the
+  **Bookings** button of the Book a driver screen and after Confirm Ride; taxi rides are followed
+  on their ride screen and appear here once they finish.
+- **Tested on the phone** (customer 9999900003): the Profile tab shows "My Transactions"; October
+  shows ₹110 spent (Car ₹52, Wallet ₹20, Bike ₹38) with +₹50 referral earning; September ₹113
+  (Auto ₹72, Bike ₹41, +₹500 recharge); the Bike chip narrows the list; July shows "No Bike
+  transactions in July 2026". The test rows (5 rides and 3 wallet entries for customer 7147, marked
+  "test") exist only in the local database. For customer 7145 the API returned 8 Driver bookings
+  and the Car ride of 26 Oct 2026 (₹3,409).
+- **Not done yet:** tapping a row does not open the booking or ride details; no download of a
+  statement; a split deployment (each service on its own database) needs the customer API to ask
+  each service for its part instead of reading the shared tables.
 
 ---
 ## Live inventory (generated)
@@ -557,8 +614,8 @@ admin dashboard** and the app shows them in its own screen.
 <!-- AUTO:inventory:start -->
 _This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
 
-- Source files: **153**
-- Server endpoints: **51**  (see `docs/API_ENDPOINTS.md`)
+- Source files: **155**
+- Server endpoints: **52**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**
 - Files without START/END markers: **0**

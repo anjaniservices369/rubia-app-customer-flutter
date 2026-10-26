@@ -17,6 +17,7 @@ The server address itself is `apiBaseUrl` (set with `--dart-define=API_BASE_URL=
 | `PERSONAL_DETAILS` | `/user/update-profile` | yes |
 | `UPDATE_PROFILE_PIC` | `/user/update-profile-pic` | yes |
 | `LEGAL_PAGE` | `/user/legal-page?type=` | no |
+| `MY_TRANSACTIONS` | `/user/my-transactions` | yes |
 | `SERVICES` | `/user/services` | yes |
 | `CANCELLATION_CHARGES` | `/user/cancellation-charges` | yes |
 | `NOTIFICATION` | `/user/list-fcm-notifications` | yes |

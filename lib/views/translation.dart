@@ -31,6 +31,7 @@ class LanguageTranslations extends Translations {
           'Loads': 'Loads',
           'Ride_now': 'Ride now',
           'myrides': 'My Rides',
+          'my_transactions': 'My Transactions',
           'Outstation': 'Outstation',
 
           'Rentals': 'Rentals',
