@@ -64,6 +64,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `googleMapPage.dart` | INACTIVE: whole file is commented out; googleMapScreen.dart is the live version. | **UNUSED: no screen imports it** Safe to delete. // ignore_for_file: unused_local_variable |
 | `googleMapScreen.dart` | Shared map picker: search or drag the pin, reads the address and pincode of the point. | Used by the pickup, drop and favourite-address screens. ignore_for_file: unused_local_variable |
 | `helpandsos.dart` | Help and SOS buttons shown on the ride screens. | SOS alerts the emergency contacts. |
+| `legalDocumentPage.dart` | Shows Rubia's Terms and Conditions, Privacy Policy or Refund Policy inside the app. The text is written by the Rubia team in the admin dashboard (Customers > Terms & Policies) and loaded from the server. | Server: /api/user/legal-page?type=terms|privacy|refund (no login, so it also works from the login screen). The text is HTML from the dashboard's editor; it is drawn with scripts switched off and links blocked, so it can only be read. |
 | `locationcard.dart` | Card showing pickup and drop addresses of a trip. | Visual component. |
 | `pickupgoogleMap.dart` | Map screen where the customer picks the PICKUP point; checks the service area. | Result is stored in TripOptionsProvider. // ignore_for_file: unused_local_variable |
 | `priceListWidget.dart` | One row of a price breakdown (label + amount). | Visual component. |
@@ -228,7 +229,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `personalDetailsView.dart` | First-time profile form: name, email and an optional referral code. Shown as a bottom sheet on top of Home right after a brand-new customer verifies their OTP; on success the emergency contacts screen follows, then Home with the enable-location sheet. | Saved with update-profile; the referral code (if typed) with apply-referral. |
+| `personalDetailsView.dart` | First-time profile form: name and email (required), plus an optional photo, gender, date of birth and referral code. Shown as a bottom sheet on top of Home right after a brand-new customer verifies their OTP; on success the emergency contacts screen follows, then Home with the enable-location sheet. | Saved with update-profile; the photo is uploaded with media/upload and saved with update-profile-pic; the referral code (if typed) with apply-referral. |
 
 ## `views/PersonalDetails/components`
 

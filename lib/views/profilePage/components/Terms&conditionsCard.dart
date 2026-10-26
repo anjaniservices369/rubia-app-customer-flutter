@@ -7,7 +7,7 @@ import 'package:base_project_flutter/constants/imageConstant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../globalWidgets/legalDocumentPage.dart';
 import '../../../responsive.dart';
 
 // >>> START: TermsConditionsCard - screen/widget shell (the visible part is in its State class)
@@ -21,14 +21,6 @@ class TermsConditionsCard extends StatefulWidget {
 
 // >>> START: _TermsConditionsCardState - the data and logic behind its screen
 class _TermsConditionsCardState extends State<TermsConditionsCard> {
-
-  // >>> START: _launchUrl - launch url
-  Future<void> _launchUrl(Uri _url) async {
-    if (!await launchUrl(_url)) {
-      throw Exception('Could not launch $_url');
-    }
-  }
-  // <<< END: _launchUrl - launch url
 
   // >>> START: build - draws this screen/widget on the display
   @override
@@ -56,8 +48,8 @@ class _TermsConditionsCardState extends State<TermsConditionsCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     GestureDetector(
-                      onTap: () => _launchUrl(
-                          Uri.parse("https://rubia.services/privacy%20and%20policy.html")),
+                      onTap: () => LegalDocumentPage.open(
+                          context, LegalDocumentPage.privacy, "Privacy Policy"),
                       child: Text(
                         "Privacy_Policy".tr,
                         style: TextStyle(
@@ -90,8 +82,8 @@ class _TermsConditionsCardState extends State<TermsConditionsCard> {
                       // onTap: () {
                       //   Twl.forceNavigateTo(context, PqymentMethod());
                       // },
-                      onTap: () => _launchUrl(
-                          Uri.parse("https://rubia.services/terme%20and%20conditions.html")),
+                      onTap: () => LegalDocumentPage.open(
+                          context, LegalDocumentPage.terms, "Terms and Conditions"),
                       child: Text(
                         'terms_conditions'.tr,
                         style: TextStyle(
@@ -124,8 +116,8 @@ class _TermsConditionsCardState extends State<TermsConditionsCard> {
                       // onTap: () {
                       //   Twl.forceNavigateTo(context, PaymentSelection());
                       // },
-                      onTap: () => _launchUrl(
-                          Uri.parse("https://rubia.services/RefundPolicy.html")),
+                      onTap: () => LegalDocumentPage.open(
+                          context, LegalDocumentPage.refund, "Refund Policy"),
                       child: Text(
                         "Cancellation & Refund Policy".tr,
                         style: TextStyle(

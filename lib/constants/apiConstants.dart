@@ -25,6 +25,8 @@ const String APPLY_REFERRAL = '/user/apply-referral?auth_code=';
 const String UPDATE_LAT_LNG = '/user/update-lat-lng?auth_code=';
 const String PERSONAL_DETAILS = '/user/update-profile?auth_code=';
 const String UPDATE_PROFILE_PIC = '/user/update-profile-pic?auth_code=';
+// Terms / Privacy / Refund text written in the admin dashboard (no login needed).
+const String LEGAL_PAGE = '/user/legal-page?type=';
 const String SERVICES = '/user/services?auth_code=';
 const String CANCELLATION_CHARGES = '/user/cancellation-charges?auth_code=';
 //Notification

@@ -481,7 +481,7 @@ Setting up the database and backend for this is in section 7.2.
 |---|---|---|---|
 | 1 | **Login** (first screen; the old separate "Get Started" welcome screen is gone) | Logo and a welcome line, mobile number, tick the terms, **Login**. | `logiPage/loginPage.dart` |
 | 2 | **OTP** | Enters the 4 digits (read from the SMS; the 4th digit submits by itself). | `otpPage/otpPage.dart` |
-| 3 | **Name, email, referral** (sheet over Home, cannot be dismissed) | Full name and email are required; **referral code is optional**. A wrong code shows "Referral code does not exist" and the sheet stays, so it can be fixed or cleared. | `PersonalDetails/personalDetailsView.dart` |
+| 3 | **About you** (sheet over Home, cannot be dismissed) | **Full name and email are required.** Optional: a **photo** (camera or gallery; uploaded straight away), **gender** (Male / Female / Other chips), **date of birth** (calendar, saved as dd-MM-yyyy like the Profile screen) and a **referral code**. A wrong referral code shows "Referral code does not exist" and the sheet stays, so it can be fixed or cleared. A photo that fails to upload only shows a message (it can be added later in Profile). | `PersonalDetails/personalDetailsView.dart` |
 | 4 | **Emergency contacts** (full screen) | Two phone numbers, required (used by SOS). No back arrow; Back asks to exit the app. | `EmergencyContact/EmergencyContacts.dart` |
 | 5 | **Home + location sheet** | Home opens with the "enable location" sheet (the old separate step). | `bottomNavigation.dart` (`showLocationSheet`), `PersonalDetails/components/EnableLocationView.dart` |
 
@@ -507,10 +507,49 @@ showed the error; with the field cleared **Next** opened Emergency Contacts; two
 (`user_emergency_contacts` rows for customer 7146) and Home opened. With the contacts deleted and
 the app restarted, the contacts screen came first and then Home.
 
-### 12.4 Not done yet
+### 12.3 Tested on the phone (26 Oct 2026, new test numbers 9999900002 and 9999900003)
 
-- Gender, date of birth and profile photo are not asked at registration (only in Profile).
-- The terms link opens the website; there is no in-app copy of the terms.
+Login is the first screen; OTP 1234 signed in and opened the name sheet; a wrong referral code
+showed the error; with the field cleared **Next** opened Emergency Contacts; two numbers saved
+(`user_emergency_contacts` rows for customer 7146) and Home opened. With the contacts deleted and
+the app restarted, the contacts screen came first and then Home.
+Second run (customer 7147, Veera): photo chosen from the gallery, gender Female, date of birth
+05-01-2000 and name/email were saved in one go (`user.gender`, `user.date_of_birth`,
+`user.profile_image` filled) and the Profile tab shows the photo.
+
+### 12.4 Terms and Conditions, Privacy Policy and Refund Policy (written in the admin dashboard)
+
+The three texts are no longer a website link: they are **documents the Rubia team edits in the
+admin dashboard** and the app shows them in its own screen.
+
+- **Edit:** customer dashboard → **Customers → Terms & Policies** (`/admin/page`). Create a page,
+  choose the type (**Terms and Condition**, **Privacy** or **Refund Policy**), set the state to
+  **Active**, write the text in the editor and save. If several active pages share a type, the
+  newest one is used; set an old one to *In Active* to retire it. Editing needs no app release.
+- **Server:** `GET /api/user/legal-page?type=terms|privacy|refund` (no login, so it also works
+  before login). It returns title, the editor's HTML and the last-updated date; if nothing active
+  exists it answers "This page has not been published yet".
+- **App:** `globalWidgets/legalDocumentPage.dart` loads it and draws the HTML with scripts off and
+  links blocked. Opened from the **Terms&Conditions** link on Login and from the three links on
+  the Profile tab. Shows the server's message with **Try again** when the page is missing or the
+  phone is offline.
+- **Backend files:** `UserAppActions.php` (`actionLegalPage`), the access lists in both
+  `customerapp/.../UserController.php` and `services/haltingdriver/customer-backend/.../UserController.php`
+  (the shared dev process uses the second one), `models/base/Page.php` (new type *Refund Policy* = 4)
+  and `app/modules/admin/views/partials/nav.php` (menu link). The dashboard Page screens already existed.
+- **Local test:** the customer dashboard runs from `app/web/customer-dashboard.php`
+  (`php -S 127.0.0.1:8091 -t web web/customer-dashboard.php`, same environment as the API server).
+  Only the super admin emails in `params.php` (`superAdminEmails`) can log in. The dev database
+  holds one **sample** Terms page (typed through the dashboard form); Privacy and Refund are
+  unpublished. **The real legal text still has to be entered by the Rubia team.** The old website
+  addresses (`/terme and conditions.html` etc.) only showed the site's app-download block; the real
+  website pages are `/TermsConditions/`, `/Privacypolicy/` and `/RefundPolicy/`.
+
+### 12.5 Not done yet
+
+- No version tracking: customers are not asked to accept a changed version of the terms again.
+- The editor is a rich-text box (CKEditor); there is no per-language text, so every language
+  sees the same document.
 
 ---
 ## Live inventory (generated)
@@ -518,8 +557,8 @@ the app restarted, the contacts screen came first and then Home.
 <!-- AUTO:inventory:start -->
 _This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
 
-- Source files: **152**
-- Server endpoints: **50**  (see `docs/API_ENDPOINTS.md`)
+- Source files: **153**
+- Server endpoints: **51**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**
 - Files without START/END markers: **0**

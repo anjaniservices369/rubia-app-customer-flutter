@@ -11,17 +11,15 @@ import 'package:flutter/services.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../constants/constants.dart';
 import '../../constants/imageConstant.dart';
 import '../../globalFuctions/globalFunctions.dart';
 import '../../globalWidgets/buttonWidget.dart';
+import '../../globalWidgets/legalDocumentPage.dart';
 import '../../globalWidgets/textformfieldWidget.dart';
 import '../../responsive.dart';
 import '../otpPage/otpPage.dart';
-
-const _termsUrl = 'https://rubia.services/terme%20and%20conditions.html';
 
 // >>> START: LoginScreen - login screen: mobile number and terms
 class LoginScreen extends StatefulWidget {
@@ -45,7 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _termsRecognizer = TapGestureRecognizer()
       ..onTap = () {
-        launchUrl(Uri.parse(_termsUrl), mode: LaunchMode.externalApplication);
+        LegalDocumentPage.open(
+            context, LegalDocumentPage.terms, 'Terms and Conditions');
       };
   }
   // <<< END: initState - runs once when the screen opens - sets up data and listeners

@@ -1,14 +1,22 @@
 // =============================================================================
-// WHAT : First-time profile form: name, email and an optional referral code.
+// WHAT : First-time profile form: name and email (required), plus an optional
+//        photo, gender, date of birth and referral code.
 //        Shown as a bottom sheet on top of Home right after a brand-new
 //        customer verifies their OTP; on success the emergency contacts
 //        screen follows, then Home with the enable-location sheet.
-// NOTES: Saved with update-profile; the referral code (if typed) with apply-referral.
+// NOTES: Saved with update-profile; the photo is uploaded with media/upload and
+//        saved with update-profile-pic; the referral code (if typed) with
+//        apply-referral.
 // =============================================================================
+import 'dart:io';
+
+import 'package:base_project_flutter/api_services/mediaApi.dart';
 import 'package:base_project_flutter/views/EmergencyContact/EmergencyContacts.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:base_project_flutter/api_services/userApi.dart';
 import 'package:base_project_flutter/constants/constants.dart';
 import 'package:base_project_flutter/globalFuctions/globalFunctions.dart';
@@ -33,6 +41,83 @@ class _PersonalDetailsState extends State<PersonalDetails> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _emailaddressController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
+  // Same values the Profile screen uses, so the two always agree.
+  static const List<String> _genders = ['Male', 'Female', 'Other'];
+  String? _gender;
+  // dd-MM-yyyy, the format the Profile screen saves.
+  String? _dob;
+  File? _photo;
+  String? _photoUrl;
+  bool _uploadingPhoto = false;
+  final ImagePicker _picker = ImagePicker();
+
+  // >>> START: _pickPhoto - takes or chooses a photo and uploads it
+  Future<void> _pickPhoto(ImageSource source) async {
+    final picked = await _picker.pickImage(
+        source: source, maxHeight: 1024, maxWidth: 1024, imageQuality: 70);
+    if (picked == null || !mounted) return;
+    final file = File(picked.path);
+    setState(() {
+      _photo = file;
+      _photoUrl = null;
+      _uploadingPhoto = true;
+    });
+    final url = await MediaApi.upload(context, file);
+    if (!mounted) return;
+    setState(() {
+      _photoUrl = url;
+      _uploadingPhoto = false;
+    });
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not upload the photo. You can add it later in Profile.')));
+    }
+  }
+  // <<< END: _pickPhoto - takes or chooses a photo and uploads it
+
+  // >>> START: _choosePhotoSource - asks camera or gallery
+  void _choosePhotoSource() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(children: [
+          ListTile(
+            leading: const Icon(Icons.photo_camera),
+            title: const Text('Take a photo'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _pickPhoto(ImageSource.camera);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Choose from gallery'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _pickPhoto(ImageSource.gallery);
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+  // <<< END: _choosePhotoSource - asks camera or gallery
+
+  // >>> START: _pickDob - date of birth picker
+  Future<void> _pickDob() async {
+    FocusScope.of(context).unfocus();
+    final date = await showDatePicker(
+      context: context,
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      initialDate: DateTime(2000, 1, 1),
+      firstDate: DateTime(1930),
+      lastDate: DateTime.now(),
+    );
+    if (date != null && mounted) {
+      setState(() => _dob = DateFormat('dd-MM-yyyy').format(date));
+    }
+  }
+  // <<< END: _pickDob - date of birth picker
 
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
@@ -79,7 +164,37 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                       fontSize: isTab(context) ? 10.sp : 20.sp,
                     ),
                   ),
-                  SizedBox(height: 1.6.h),
+                  SizedBox(height: 1.2.h),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _uploadingPhoto ? null : _choosePhotoSource,
+                      child: Stack(alignment: Alignment.bottomRight, children: [
+                        CircleAvatar(
+                          radius: 38,
+                          backgroundColor: tBackground,
+                          backgroundImage: _photo != null ? FileImage(_photo!) : null,
+                          child: _uploadingPhoto
+                              ? CircularProgressIndicator(color: tPrimaryColor)
+                              : (_photo == null
+                                  ? Icon(Icons.person, size: 40, color: tGray)
+                                  : null),
+                        ),
+                        CircleAvatar(
+                          radius: 13,
+                          backgroundColor: tPrimaryColor,
+                          child: const Icon(Icons.camera_alt, size: 15, color: Colors.white),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text('Add a photo (optional)',
+                          style: TextStyle(color: tGray, fontSize: isTab(context) ? 8.sp : 11.sp)),
+                    ),
+                  ),
+                  SizedBox(height: 1.4.h),
                   Text(
                     'Full_name'.tr,
                     style: TextStyle(
@@ -149,6 +264,59 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                   ),
                   SizedBox(height: 3.h),
                   Text(
+                    'gender'.tr + ' (optional)',
+                    style: TextStyle(
+                        color: tDarkOrangeColor,
+                        fontSize: isTab(context) ? 9.sp : 12.sp),
+                  ),
+                  SizedBox(height: 1.h),
+                  Wrap(
+                    spacing: 10,
+                    children: _genders
+                        .map((g) => ChoiceChip(
+                              label: Text(g),
+                              selected: _gender == g,
+                              selectedColor: tPrimaryColor,
+                              labelStyle: TextStyle(
+                                  color: _gender == g ? Colors.white : tDarkNavyblue,
+                                  fontWeight: FontWeight.w600),
+                              onSelected: (on) =>
+                                  setState(() => _gender = on ? g : null),
+                            ))
+                        .toList(),
+                  ),
+                  SizedBox(height: 2.4.h),
+                  Text(
+                    'Date of birth (optional)',
+                    style: TextStyle(
+                        color: tDarkOrangeColor,
+                        fontSize: isTab(context) ? 9.sp : 12.sp),
+                  ),
+                  SizedBox(height: 1.h),
+                  GestureDetector(
+                    onTap: _pickDob,
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: tBackground,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(children: [
+                        Expanded(
+                          child: Text(_dob ?? 'DD-MM-YYYY',
+                              style: TextStyle(
+                                  color: _dob == null ? tGray : tDarkNavyblue,
+                                  fontWeight:
+                                      _dob == null ? FontWeight.w400 : FontWeight.w600,
+                                  fontSize: isTab(context) ? 10.sp : 13.sp)),
+                        ),
+                        Icon(Icons.calendar_today, size: 18, color: tPrimaryColor),
+                      ]),
+                    ),
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
                     'referral_code'.tr,
                     style: TextStyle(
                         color: tDarkOrangeColor,
@@ -198,13 +366,25 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                             Map<String, String> param = {
                               "first_name": _firstNameController.text,
                               "email": _emailaddressController.text,
+                              if (_gender != null) "gender": _gender!,
+                              if (_dob != null) "date_of_birth": _dob!,
                             };
+                            if (_uploadingPhoto) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Uploading your photo, please wait.')));
+                              return;
+                            }
                             var res =
                                 await UserAPI().personalDetails(context, param);
                             if (res == null || res['status'] != 'OK') {
                               Twl.createAlert(
                                   context, 'Oops', '${res?['error']}');
                               return;
+                            }
+                            // A photo that failed to save is not worth stopping for:
+                            // it can be added later in Profile.
+                            if (_photoUrl != null) {
+                              await UserAPI().updateProfilePic(context, _photoUrl!);
                             }
                             // The referral code is optional; a wrong one is shown
                             // here so the customer can fix or clear it.
