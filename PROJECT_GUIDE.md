@@ -1,7 +1,7 @@
 # Rubia Customer App – Project Guide
 
 Written for: the business owner (no technical background needed) and for new developers who join later.
-Last updated: 14 Oct 2026.
+Last updated: 26 Oct 2026.
 
 ---
 
@@ -149,6 +149,61 @@ Files marked **INACTIVE** are fully commented out and can be deleted safely.
 Tested flow on a real phone against the local backend: login with auto-read OTP → home →
 Drivers → pick drop → estimate → confirm → My Bookings → cancel.
 
+### 7.1 Build speed and phone connection (updated 26 Oct 2026)
+
+- `android/gradle.properties` now gives Gradle 4 GB of memory and turns on parallel builds,
+  build caching and the daemon. The first build is still slow (about 10-12 minutes); later builds
+  reuse the cache.
+- The "Gradle / AGP / Kotlin version will soon be dropped" and "google_api_headers ... default
+  plugin" messages are warnings, not errors. `--android-skip-build-dependency-validation` hides
+  the first kind.
+- If the phone disappears from `adb devices` after a build (`device not found` / `offline`), run
+  `adb kill-server` then `adb start-server` until it shows `device`, and install the APK that was
+  already built: `adb install -r build/app/outputs/flutter-apk/app-debug.apk`. No rebuild needed.
+- On Xiaomi phones `INSTALL_FAILED_USER_RESTRICTED` means "Install via USB" (and USB debugging
+  security settings) must be switched on in Developer options.
+
+### 7.2 Running the whole business flow on a phone with a local backend (verified 26 Oct 2026)
+
+1. **Database:** the backend expects MySQL on `127.0.0.1:3308`. Start a `mysql:8.4` Docker
+   container on that port (empty root password) and import the dumps from
+   `../rubia-data-sql-dumps` (`rubia_website.sql` first, then the others).
+2. **Backend:** from `../rubia-backend-php/app` run `php -S 127.0.0.1:8080 -t . index.php` with
+   these environment variables and options (nothing in the code is changed):
+   - `YII_ENV=dev`, `YII_DEBUG=0`
+   - `OTP_TEST_NUMBERS=<customer number>,<driver number>` and `OTP_TEST_CODE=<4 digits>`: a dev-only
+     test login that skips the SMS. It works only in dev mode and only from the same machine.
+   - `-d error_reporting=8191`: PHP 8.2 warns about `strtotime(null)` in the fare code and that
+     warning otherwise makes the estimate fail.
+   - `-d curl.cainfo=<cacert.pem>` and `-d openssl.cafile=<cacert.pem>`: this PHP has no
+     certificate list, so calls to Google fail without it.
+3. **Phone:** `adb reverse tcp:8080 tcp:8080`, then build and install the app with
+   `--dart-define=API_BASE_URL=http://localhost:8080/api`.
+4. **Customer in the app:** Get Started → phone number → tick the terms box → OTP → name and
+   email → emergency contacts (two numbers) → Home → Drivers → one-way, in-city → pick the drop
+   on the map → Automatic, Sedan → Next → today/tomorrow and time → OK → estimate → Next →
+   Confirm Ride. The booking shows "Waiting for Driver" with a 4-digit ride OTP.
+5. **Driver:** the Partner app was not used. The driver was played through its API
+   (`/api/driver/…`): `driver-status` (status=1), `accept-ride`, `go-for-pickup`,
+   `arrived-location` (send the ride OTP), `start-ride`, `complete-ride`.
+6. **Check:** the booking becomes status 7 (completed) in the `booking` table, one row appears in
+   `driver_earnings`, and the app lists it under Bookings → Completed.
+
+Two full runs completed this way (bookings 1008 and 1009, estimate ₹609, final price ₹360).
+
+### 7.3 Copilot agent for this project
+
+`.github/agents/rubia-customer-app.agent.md` defines the **Rubia Customer App** agent. It knows
+the folder layout, the build/run steps above and the rules (no Firebase, no secrets in the app,
+status numbers must match the backend). Use it for building, testing the flow on a phone and
+changing screens, providers or API calls.
+
+### 7.4 Source control
+
+The project is now a git repository (branch `main`, first commit `cf4e94e`). The signing
+keystore folder (`jks/`), `android/key.properties`, `android/local.properties` and `.claude/` are
+kept out of git through `.git/info/exclude`, so they are never committed by accident.
+
 ---
 
 ## 8. Known issues and open decisions (for the owner)
@@ -168,6 +223,16 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
 6. **Dead files.** Thirteen files are fully commented out (marked INACTIVE) and can be removed.
 7. **Cancel reasons and other new English texts** are not yet translated into Hindi, Kannada,
    Telugu and Tamil.
+8. **Price shown after the ride differs from the database.** In both test runs the Completed card
+   in the app showed ₹420 while the booking's `final_price` was ₹360 (estimate ₹609). Not yet
+   investigated: check which field the Bookings list reads.
+9. **Google Distance Matrix and Routes APIs** return REQUEST_DENIED for the project key (see the
+   backend log). The fare still works, but both APIs should be enabled in Google Cloud.
+10. **Fare estimate fails under PHP 8.2 warnings.** `Booking::calculateIntercityOneWayEstimate`
+    calls `strtotime()` on an empty `end_time`; the backend team should fix it instead of hiding
+    the warning (see 7.2).
+11. **Emergency contacts are saved without names.** The server stored the two numbers with empty
+    names and relationships.
 
 ---
 
@@ -184,6 +249,48 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
 | **APK** | The installable Android file |
 | **Debug / release build** | A test version / the version for the store |
 
+---
+
+## 10. Booking flow screen by screen, and how to shorten it (audit of 26 Oct 2026)
+
+This is what the customer goes through today to book a driver, taken from walking the app on a
+phone and reading the code. **Nothing here is implemented yet; the right-hand column is a
+proposal for the owner to approve.**
+
+| # | Screen today | Options on it | File | Proposal |
+|---|---|---|---|---|
+| 1 | Home | Drivers tile (others "Coming soon"), bottom tabs | `homePage/homePage.dart` | Keep |
+| 2 | Select ride type | One-way / Round trip tabs, In-city / Out-station cards, Next | `RideBooking/selectRideType.dart` | Merge into screen 3 as two toggles at the top |
+| 3 | Pickup and drop | Pickup (from GPS), drop row, Automatic / Manual, car types (SUV+, SUV, Sedan, Hatchback), Next | `RideBooking/selectLocationPage.dart` | Becomes the single booking screen |
+| 4 | Drop sheet | "Choose from favourites" list, "Select From Map" | `RideBooking/FavLocations.dart` | Show favourites inside screen 3; open the map only for a new place |
+| 5 | Map picker | Drag the map, "Select Location" | map pickers in `globalWidgets/` | Keep (needed for a new place) |
+| 6 | Date and time sheet | Today / tomorrow, time spinner, OK (asks the server for the estimate) | `dummy.dart` (class `Clock`) | Inline "When" row on screen 3, default to the next free slot |
+| 7 | Estimate page | Summary, fare, usage hours 1-3, Coupon, payment (Cash), Next | `homePage/components/OneWay.dart` | Merge with screen 8 |
+| 8 | Confirm sheet | Same fare again, date, hours, Confirm Ride | `homePage/components/confirmride.dart` | Merge with screen 7: one "Estimate and confirm" page |
+| 9 | My Bookings | Active / Completed / Cancelled tabs | `Bookings/` | Keep; after confirming, go straight to screen 10 |
+| 10 | Ride details | Map, ride OTP, driver, estimate price, cancel | `Bookings/bookingPageView.dart` | Keep |
+
+**Today:** 8 steps from tapping Drivers to the confirmed booking (2, 3, 4, 5, 6, 7, 8, plus the
+bookings list), with the fare shown twice (7 and 8).
+
+**Proposed:** 3 steps.
+1. **Book a driver** (screen 3 expanded): trip type toggles, pickup and drop with favourites,
+   gear and car type, date and time. The fare is requested automatically as soon as the details are
+   complete, and shown at the bottom of the same screen.
+2. **Estimate and confirm** (screens 7 + 8): fare breakdown, usage hours, coupon, payment, one
+   **Confirm Ride** button.
+3. **Ride details** (screen 10), opened directly after confirming.
+
+**Things to keep in mind when changing it:**
+- All choices live in `TripOptionsProvider` (`providers/riderProvider.dart`), so the merge is
+  mostly moving widgets, not changing data or server calls.
+- Round trip needs only the pickup (the driver returns to it); one-way needs pickup and drop.
+- The server still decides the price; the app must keep sending the same `get-estimate` fields.
+- Out-station trips use a different server fare, so the In-city / Out-station toggle must stay.
+- Back-button behaviour: today it clears the booking and returns Home; keep that on the merged
+  screen.
+
+---
 ## Live inventory (generated)
 
 <!-- AUTO:inventory:start -->
