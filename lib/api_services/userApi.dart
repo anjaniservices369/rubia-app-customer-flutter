@@ -5,6 +5,7 @@
 // NOTES: Each method = one server endpoint. The endpoint addresses live in
 //        constants/apiConstants.dart.
 // =============================================================================
+import 'dart:async';
 import 'dart:io';
 
 import 'package:base_project_flutter/api_services/ApiHelper.dart';
@@ -24,23 +25,30 @@ import '../models/walletTransactionsModel.dart';
 class UserAPI {
 //Check API
   // >>> START: checkApi - asks the server who is logged in and whether the login is valid
-  checkApi(String authCode) async {
-    var client = http.Client();
-    var url = apiBaseUrl + CHECK_API + authCode;
-    var jsonMap;
+  Future<dynamic> checkApi(String authCode) async {
+    final client = http.Client();
+    final url = apiBaseUrl + CHECK_API + authCode;
     try {
-      var response = await client.get(Uri.parse(url));
+      final response =
+          await client.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
-        var jsonString = response.body;
-        jsonMap = json.decode(jsonString);
+        final jsonMap = json.decode(response.body);
         await SessionGuard.handle(jsonMap);
         return jsonMap;
-      } else {
       }
-    } on SocketException {
-    } catch (exception) {
-      return jsonMap;
+      debugPrint('Session check failed with HTTP ${response.statusCode}');
+    } on SocketException catch (error, stackTrace) {
+      debugPrint('Session check has no network: $error\n$stackTrace');
+    } on TimeoutException catch (error, stackTrace) {
+      debugPrint('Session check timed out: $error\n$stackTrace');
+    } on FormatException catch (error, stackTrace) {
+      debugPrint('Session check returned invalid JSON: $error\n$stackTrace');
+    } on http.ClientException catch (error, stackTrace) {
+      debugPrint('Session check request failed: $error\n$stackTrace');
+    } finally {
+      client.close();
     }
+    return null;
   }
   // <<< END: checkApi - asks the server who is logged in and whether the login is valid
 
@@ -152,9 +160,9 @@ class UserAPI {
 
   // >>> START: sendLocation - tells the server the customer's current position
   sendLocation(
-      BuildContext context,
-      Map<String, String> param,
-      ) async {
+    BuildContext context,
+    Map<String, String> param,
+  ) async {
     var headers = await ApiHelper().getHeader(context);
     var url = CURRENT_CITY + headers['auth_code'];
 
@@ -166,7 +174,8 @@ class UserAPI {
 
   //update latlng
   // >>> START: getUpdateLatLong - updates the customer's saved latitude/longitude
-  getUpdateLatLong(BuildContext context, String latitude, String longitude) async {
+  getUpdateLatLong(
+      BuildContext context, String latitude, String longitude) async {
     var headers = await ApiHelper().getHeader(context);
     var url = UPDATE_LAT_LNG + headers['auth_code'];
     Map<String, String> params = {'latitude': latitude, 'longitude': longitude};
@@ -328,7 +337,8 @@ class UserAPI {
 
   // All transaction
   // >>> START: allTranscations - loads the wallet transactions (with filters and paging)
-  Future<WalletTransactionModel> allTranscations(BuildContext context, String page) async {
+  Future<WalletTransactionModel> allTranscations(
+      BuildContext context, String page) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var startDate;
     var endDate;
@@ -338,8 +348,12 @@ class UserAPI {
 
     startDate = formatter.format(now);
 
-    startDate = sharedPreferences.getString('startDate') != null ? sharedPreferences.getString('startDate') : startDate;
-    endDate = sharedPreferences.getString('endDate') != null ? sharedPreferences.getString('endDate') : endDate;
+    startDate = sharedPreferences.getString('startDate') != null
+        ? sharedPreferences.getString('startDate')
+        : startDate;
+    endDate = sharedPreferences.getString('endDate') != null
+        ? sharedPreferences.getString('endDate')
+        : endDate;
 
     var jsonMap;
     var headers = await ApiHelper().getHeader(context);
@@ -370,8 +384,12 @@ class UserAPI {
 
     startDate = formatter.format(now);
 
-    startDate = sharedPreferences.getString('startDate') != null ? sharedPreferences.getString('startDate') : startDate;
-    endDate = sharedPreferences.getString('endDate') != null ? sharedPreferences.getString('endDate') : endDate;
+    startDate = sharedPreferences.getString('startDate') != null
+        ? sharedPreferences.getString('startDate')
+        : startDate;
+    endDate = sharedPreferences.getString('endDate') != null
+        ? sharedPreferences.getString('endDate')
+        : endDate;
 
     var headers = await ApiHelper().getHeader(context);
     var url = ALL_TRANSACTIONS + headers['auth_code'];
@@ -463,7 +481,8 @@ class UserAPI {
 
   //edit favorite location
   // >>> START: editFavLocation - changes a favourite address
-  editFavLocation(BuildContext context, Map<String, String> param, editId) async {
+  editFavLocation(
+      BuildContext context, Map<String, String> param, editId) async {
     var headers = await ApiHelper().getHeader(context);
     var url = EDIT_FAVORITE + headers['auth_code'] + '&id=' + editId;
 
@@ -486,10 +505,17 @@ class UserAPI {
   // <<< END: fetchCouponsList - loads the available coupons (paged)
 
   // >>> START: fetchBookingsList - loads My Bookings (active, completed, cancelled)
-  fetchBookingsList(BuildContext context, String page, String status, String vehicle_id) async {
-
+  fetchBookingsList(BuildContext context, String page, String status,
+      String vehicle_id) async {
     var headers = await ApiHelper().getHeader(context);
-    var url = BOOKINGS_LIST + headers['auth_code'] + '&page=' + page + "&status=" + status + "&vehicle_id=" + vehicle_id;
+    var url = BOOKINGS_LIST +
+        headers['auth_code'] +
+        '&page=' +
+        page +
+        "&status=" +
+        status +
+        "&vehicle_id=" +
+        vehicle_id;
     Map<String, String> params = {};
 
     var response = await ApiHelper().getTypePost(context, url, params);
@@ -502,7 +528,6 @@ class UserAPI {
     BuildContext context,
     String bookingId,
   ) async {
-
     var headers = await ApiHelper().getHeader(context);
     var url = RIDE_INFO + headers['auth_code'];
     Map<String, String> params = {'booking_id': bookingId};
@@ -517,7 +542,6 @@ class UserAPI {
     BuildContext context,
     String bookingId,
   ) async {
-
     var headers = await ApiHelper().getHeader(context);
     var url = VIEW_BOOKING + headers['auth_code'];
     Map<String, String> params = {'booking_id': bookingId};
@@ -529,9 +553,8 @@ class UserAPI {
 
   // >>> START: viewBookingBG - same as viewBooking but for the background status checker
   viewBookingBG(
-      String bookingId,
-      ) async {
-
+    String bookingId,
+  ) async {
     var headers = await ApiHelper().getHeaderBG();
     var url = VIEW_BOOKING + headers['auth_code'];
     Map<String, String> params = {'booking_id': bookingId};
@@ -542,10 +565,14 @@ class UserAPI {
   // <<< END: viewBookingBG - same as viewBooking but for the background status checker
 
   // >>> START: cancelRide - cancels a driver booking with the chosen reason
-  cancelRide(BuildContext context, String bookingId, String cancelReason) async {
+  cancelRide(
+      BuildContext context, String bookingId, String cancelReason) async {
     var headers = await ApiHelper().getHeader(context);
     var url = CANCEL_RIDE + headers['auth_code'];
-    Map<String, String> params = {'booking_id': bookingId, 'cancel_reason': cancelReason};
+    Map<String, String> params = {
+      'booking_id': bookingId,
+      'cancel_reason': cancelReason
+    };
     var response = await ApiHelper().getTypePost(context, url, params);
     return response;
   }
@@ -556,7 +583,6 @@ class UserAPI {
   // rating and Review api
   // >>> START: myAddReview - sends the customer's rating and comment for a driver
   myAddReview(BuildContext context, param) async {
-
     var headers = await ApiHelper().getHeader(context);
     var url = ADD_REVIEW + headers['auth_code'];
     Map<String, String> params = param;
@@ -647,7 +673,8 @@ class UserAPI {
   // <<< END: rideRequest - creates a taxi ride request on the server
 
   // >>> START: rideCompletedDetails - gets the final bill of a completed taxi ride
-  Future<dynamic> rideCompletedDetails(BuildContext context, String rideId) async {
+  Future<dynamic> rideCompletedDetails(
+      BuildContext context, String rideId) async {
     var jsonMap;
     var headers = await ApiHelper().getHeader(context);
     var uri = RIDE_COMPLETION_DETAIL + headers['auth_code'];

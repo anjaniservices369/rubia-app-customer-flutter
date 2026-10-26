@@ -4,7 +4,6 @@
 // =============================================================================
 import 'dart:async';
 
-import 'package:base_project_flutter/responsive.dart';
 import 'package:base_project_flutter/taxiservices/rideservices/rideLayout.dart';
 import 'package:base_project_flutter/views/homePage/homePage.dart';
 import 'package:base_project_flutter/views/profilePage/ProfilePageView.dart';
@@ -144,27 +143,41 @@ class _BottomNavigationState extends State<BottomNavigation>
   Widget build(BuildContext context) {
     Image home(int index) => tabIndexs == index
         ? Image.asset(
-      Images.SELECT_HOME,
-      width: isTab(context) ? 40 : 22,
-    )
+            Images.SELECT_HOME,
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          )
         : Image.asset(
-      Images.HOME,
-      width: isTab(context) ? 35 : 22,
-    );
+            Images.HOME,
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          );
     Image profile(int index) => tabIndexs == index
         ? Image.asset(
-      Images.SELECT_PROFILE,
-      width: isTab(context) ? 36 : 18,
-    )
+            Images.SELECT_PROFILE,
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          )
         : Image.asset(
-      Images.PROFILE,
-      width: isTab(context) ? 36 : 18,
-    );
+            Images.PROFILE,
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          );
     return NewRideLayout(
-      child: WillPopScope(
-        onWillPop: () => tabIndexs == 0
-            ? Twl.willpopAlert(context)
-            : Twl.forceNavigateTo(context, BottomNavigation(tabIndexId: 0)),
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (tabIndexs != 0) {
+            setState(() => tabIndexs = 0);
+          } else {
+            Twl.willpopAlert(context);
+          }
+        },
         child: Scaffold(
           body: Stack(
             children: [
@@ -181,14 +194,22 @@ class _BottomNavigationState extends State<BottomNavigation>
           bottomNavigationBar: BottomNavigationBar(
             unselectedItemColor: tDarkNavyblue,
             selectedItemColor: tPrimaryColor,
+            selectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
             onTap: _onItemTapped,
             currentIndex: tabIndexs,
             showSelectedLabels: true,
             showUnselectedLabels: true,
-            iconSize: isTab(context) ? 40 : 30,
+            iconSize: 24,
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.white,
-            elevation: 0,
+            elevation: 8,
             items: [
               _bottomNavigationBarItem(
                 icon: home(0),
@@ -209,7 +230,10 @@ class _BottomNavigationState extends State<BottomNavigation>
   // >>> START: _bottomNavigationBarItem - bottom navigation bar item
   _bottomNavigationBarItem({required icon, required String label}) {
     return BottomNavigationBarItem(
-      icon: icon,
+      icon: Padding(
+        padding: const EdgeInsets.only(top: 2, bottom: 2),
+        child: icon,
+      ),
       label: label,
     );
   }

@@ -3,16 +3,13 @@
 // NOTES: Server: refer-earn.
 // =============================================================================
 import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 // import 'package:share_plus/share_plus.dart' import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../api_services/userApi.dart';
@@ -36,7 +33,6 @@ class ReferAndEarn extends StatefulWidget {
 class _ReferAndEarnState extends State<ReferAndEarn> {
   var checkDetails;
   // >>> START: checkWalletApi - checks wallet api
-  @override
   checkWalletApi() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var check =
@@ -88,10 +84,11 @@ class _ReferAndEarnState extends State<ReferAndEarn> {
             ));
       },
       child: Scaffold(
+        backgroundColor: tBackground,
         appBar: AppBar(
           elevation: 1,
           titleSpacing: 7,
-          backgroundColor: tappbarclr,
+          backgroundColor: tYellow,
 
           leading: GestureDetector(
               onTap: () {
@@ -108,10 +105,10 @@ class _ReferAndEarnState extends State<ReferAndEarn> {
           title: Text(
             "refer_&_earn".tr,
             style: TextStyle(
-                color: tSecondaryColor,
+                color: tDarkNavyblue,
                 fontFamily: "mulish",
-                fontSize: isTab(context) ? 10.sp : 17.sp,
-                fontWeight: FontWeight.w600),
+                fontSize: 18,
+                fontWeight: FontWeight.w700),
           ),
           // actions: [
           //   GestureDetector(
@@ -143,319 +140,252 @@ class _ReferAndEarnState extends State<ReferAndEarn> {
           // ],
         ),
         body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: Form(
             key: _formKey,
             child: checkDetails == null
-                ? Align(
-                    alignment: Alignment.center,
-                    child: SpinKitThreeBounce(
-                      color: tPrimaryColor,
-                      size: 20.0,
-                    ))
+                ? SizedBox(
+                    height: 240,
+                    child: Center(
+                      child: CircularProgressIndicator(color: tPrimaryColor),
+                    ),
+                  )
                 : Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Column(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.symmetric(
-                                vertical: 9,
-                                horizontal: isTab(context) ? 25 : 15),
-                            padding: EdgeInsets.symmetric(vertical: 0),
-                            decoration: BoxDecoration(
-                                boxShadow: [tBoxShadow],
-                                borderRadius: BorderRadius.circular(20),
-                                color: tWhite),
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 20),
-                                  child: Image(
-                                    height: 19.h,
-                                    image: AssetImage(Images.REFERFRENDSIMG),
-                                  ),
-                                ),
-                                Text(
-                                  "refer_friends".tr,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      color: tSecondaryColor,
-                                      fontFamily: "mulish",
-                                      fontSize: isTab(context) ? 17.sp : 19.sp),
-                                ),
-                                SizedBox(height: 1.h),
-                                Text(
-                                  "earn_Upto_₹100_Per_Friend_You_Invite".tr,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w400,
-                                      color: tSecondaryColor,
-                                      fontFamily: "mulish",
-                                      fontSize: isTab(context) ? 12.sp : 12.sp),
-                                ),
-                                SizedBox(height: 1.5.h),
-                                Container(
-                                    margin: EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: isTab(context) ? 10 : 5),
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 20, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        color: tappbarclr),
-                                    child: Row(children: [
-                                      Image(
-                                        height: 2.4.h,
-                                        image: AssetImage(Images.GITICON),
-                                      ),
-                                      SizedBox(width: 2.w),
-                                      Text(
-                                        "my_rewards".tr,
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            color: tSecondaryColor,
-                                            fontFamily: "mulish",
-                                            fontSize:
-                                                isTab(context) ? 9.sp : 11.sp),
-                                      ),
-                                      Spacer(),
-                                      Text(
-                                          (referEarnings != null
-                                              ? currencySymbol +
-                                                  referEarnings['earnings']
-                                                      .toString()
-                                              : currencySymbol + ''),
-                                          // currencySymbol +
-                                          //     referEarnings['earnings']
-                                          //         .toString(),
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              color: tSecondaryColor,
-                                              fontFamily: "mulish",
-                                              fontSize: isTab(context)
-                                                  ? 12.sp
-                                                  : 14.sp))
-                                    ]))
-                              ],
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: tWhite,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: const [tBoxShadow],
+                        ),
+                        child: Column(
+                          children: [
+                            Image(
+                              height: 160,
+                              fit: BoxFit.contain,
+                              image: AssetImage(Images.REFERFRENDSIMG),
                             ),
-                          ),
-                          Container(
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: isTab(context) ? 25 : 15,
-                                  vertical: 5),
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 20, horizontal: 10),
+                            const SizedBox(height: 12),
+                            Text(
+                              'refer_friends'.tr,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: tDarkNavyblue,
+                                fontFamily: 'mulish',
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'earn_Upto_₹100_Per_Friend_You_Invite'.tr,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: tGray,
+                                fontFamily: 'mulish',
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                                horizontal: 16,
+                              ),
                               decoration: BoxDecoration(
-                                  boxShadow: [tBoxShadow],
-                                  borderRadius: BorderRadius.circular(14),
-                                  color: tWhite),
-                              child: Column(
+                                borderRadius: BorderRadius.circular(14),
+                                color: tYellow.withValues(alpha: 0.2),
+                              ),
+                              child: Row(
                                 children: [
-                                  Row(children: [
-                                    Text(
-                                      "share_Your_Invite_Code".tr,
+                                  Icon(
+                                    Icons.card_giftcard_rounded,
+                                    color: tPrimaryColor,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'my_rewards'.tr,
                                       style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          color: tSecondaryColor,
-                                          fontFamily: "mulish",
-                                          fontSize:
-                                              isTab(context) ? 12.sp : 14.sp),
-                                    ),
-                                    Spacer(),
-                                    GestureDetector(
-                                      onTap: (() => launch(
-                                          "https://rubia.services/terme%20and%20conditions.html")),
-                                      child: Container(
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          100),
-                                                  border: Border.all(
-                                                      color: tPrimaryColor,
-                                                      width: 1.0)),
-                                              child: Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 6.0,
-                                                    vertical: 1.0),
-                                                child: Text('!',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: tPrimaryColor,
-                                                        fontFamily: "mulish",
-                                                        fontSize: isTab(context)
-                                                            ? 8.sp
-                                                            : 9.sp)),
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              width: 1.w,
-                                            ),
-                                            Text("T&Cs",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.w400,
-                                                    color: tPrimaryColor,
-                                                    fontFamily: "mulish",
-                                                    fontSize: isTab(context)
-                                                        ? 8.sp
-                                                        : 10.sp))
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ]),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      await Clipboard.setData(ClipboardData(
-                                        text: checkDetails['referal_code']
-                                            .toString(),
-                                      ));
-                                      // ScaffoldMessenger.of(context).showSnackBar(
-                                      //     SnackBar(
-                                      //       content: Text("${widget.item['code'].toString()}"),
-                                      //     ),
-
-                                      //   );
-                                      Fluttertoast.showToast(
-                                        msg: 'referal_code'.tr,
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        timeInSecForIosWeb: 1,
-                                        backgroundColor: Colors.black,
-                                        textColor: Colors.white,
-                                        fontSize: 16.0,
-                                      );
-
-                                      // copied successfully
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(15),
-                                          color: tReferColor),
-                                      margin: EdgeInsets.symmetric(
-                                          horizontal: 60, vertical: 15),
-                                      child: DottedBorder(
-                                        color: tPrimaryColor,
-                                        borderType: BorderType.RRect,
-                                        radius: Radius.circular(15),
-                                        strokeWidth: 1,
-                                        dashPattern: [8],
-                                        // padding: EdgeInsets.all(6),
-                                        child: Container(
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 16),
-                                            decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(15),
-                                                color: tReferColor),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Image(
-                                                  height: 2.5.h,
-                                                  image: AssetImage(
-                                                      Images.COPYICON),
-                                                ),
-                                                SizedBox(
-                                                  width: 1.w,
-                                                ),
-                                                Text(
-                                                  checkDetails['referal_code']
-                                                      .toString(),
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: tPrimaryColor,
-                                                      fontFamily: "mulish",
-                                                      fontSize: isTab(context)
-                                                          ? 12.sp
-                                                          : 15.sp),
-                                                ),
-                                              ],
-                                            )),
+                                        color: tDarkNavyblue,
+                                        fontFamily: 'mulish',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                  Container(
-                                    margin:
-                                        EdgeInsets.symmetric(horizontal: 60),
-                                    child: Center(
-                                      child: Text(
-                                        "When_your_friends_sign_up_this_referral_code_you_can_received_a_free_ride"
-                                            .tr,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w400,
-                                            color: tDarkOrangeColor,
-                                            fontFamily: "mulish",
-                                            fontSize:
-                                                isTab(context) ? 8.sp : 10.sp),
-                                      ),
+                                  Text(
+                                    referEarnings != null
+                                        ? currencySymbol +
+                                            referEarnings['earnings'].toString()
+                                        : currencySymbol,
+                                    style: TextStyle(
+                                      color: tDarkNavyblue,
+                                      fontFamily: 'mulish',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ],
-                              )),
-                          SizedBox(
-                            height: 2.h,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'share_your_refer'.tr,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: tPrimaryColor,
-                                    fontFamily: "mulish",
-                                    fontSize: isTab(context) ? 12.sp : 15.sp),
                               ),
-                              // GestureDetector(
-                              //     image: AssetImage(
-                              // GestureDetector(
-                              //     image: AssetImage(
-                              // GestureDetector(
-                              //     image: AssetImage(
-                            ],
-                          ),
-                          SizedBox(
-                            height: 4.h,
-                          ),
-                          Center(
-                            child: SizedBox(
-                              width: isTab(context) ? 50.w : 60.w,
-                              height: isTab(context) ? 6.h : 8.h,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: tWhite,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: const [tBoxShadow],
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'share_Your_Invite_Code'.tr,
+                                    style: TextStyle(
+                                      color: tDarkNavyblue,
+                                      fontFamily: 'mulish',
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                TextButton.icon(
+                                  onPressed: () => launchUrl(Uri.parse(
+                                    'https://rubia.services/terme%20and%20conditions.html',
+                                  )),
+                                  icon: Icon(
+                                    Icons.info_outline,
+                                    color: tPrimaryColor,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'T&Cs',
+                                    style: TextStyle(
+                                      color: tPrimaryColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            InkWell(
+                              onTap: () async {
+                                await Clipboard.setData(ClipboardData(
+                                  text: checkDetails['referal_code'].toString(),
+                                ));
+                                Fluttertoast.showToast(
+                                  msg: 'referal_code'.tr,
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  timeInSecForIosWeb: 1,
+                                  backgroundColor: Colors.black,
+                                  textColor: Colors.white,
+                                  fontSize: 16,
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 14,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                  horizontal: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: tReferColor,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: tPrimaryColor.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.copy_rounded,
+                                      color: tPrimaryColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        checkDetails['referal_code'].toString(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: tDarkNavyblue,
+                                          fontFamily: 'mulish',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 32),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'When_your_friends_sign_up_this_referral_code_you_can_received_a_free_ride'
+                                  .tr,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: tGray,
+                                fontFamily: 'mulish',
+                                fontSize: 13,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            Text(
+                              'share_your_refer'.tr,
+                              style: TextStyle(
+                                color: tDarkNavyblue,
+                                fontFamily: 'mulish',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
                               child: ButtonWidget(
                                 color: tPrimaryColor,
                                 child: Text(
-                                  "refer".tr,
+                                  'refer'.tr,
                                   style: TextStyle(
-                                      color: tWhite,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: isTab(context) ? 10.sp : 16.sp),
+                                    color: tWhite,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                                borderRadius: isTab(context) ? 40.0 : 15.0,
-                                borderSide: BorderSide(
-                                  color: tPrimaryColor,
-                                ),
+                                borderRadius: 14,
+                                borderSide: BorderSide(color: tPrimaryColor),
                                 onTap: (startLoading, stopLoading,
                                     btnState) async {
                                   startLoading();
-                                  Share.share('Share your referral code ' +
-                                      checkDetails['referal_code'].toString() +
-                                      ' and refer your friend to get earnings \n https://play.google.com/store/apps/details?id=com.rubia.user');
-
+                                  Share.share(
+                                    'Share your referral code ${checkDetails['referal_code']} and refer your friend to get earnings \n https://play.google.com/store/apps/details?id=com.rubia.user',
+                                  );
                                   stopLoading();
                                 },
                               ),
                             ),
-                          ),
-                          SizedBox(
-                            height: 2.h,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),

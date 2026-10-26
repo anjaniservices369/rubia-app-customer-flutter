@@ -4,11 +4,9 @@
 // =============================================================================
 import 'package:base_project_flutter/constants/constants.dart';
 import 'package:base_project_flutter/constants/imageConstant.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sizer/sizer.dart';
 import '../../../globalWidgets/legalDocumentPage.dart';
-import '../../../responsive.dart';
 
 // >>> START: TermsConditionsCard - screen/widget shell (the visible part is in its State class)
 class TermsConditionsCard extends StatefulWidget {
@@ -21,119 +19,69 @@ class TermsConditionsCard extends StatefulWidget {
 
 // >>> START: _TermsConditionsCardState - the data and logic behind its screen
 class _TermsConditionsCardState extends State<TermsConditionsCard> {
-
   // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 1.5.w),
-      padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 4.5.w),
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       decoration: BoxDecoration(
           color: tWhite,
           boxShadow: [tBackbtnBoxShadow],
-          borderRadius: BorderRadiusDirectional.circular(10)),
+          borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Row(
-            children: [
-              Image.asset(
-                Images.PRIVACT_POLICY,
-                scale: isTab(context) ? 3 : 3.5,
-              ),
-              SizedBox(
-                width: 4.w,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () => LegalDocumentPage.open(
-                          context, LegalDocumentPage.privacy, "Privacy Policy"),
-                      child: Text(
-                        "Privacy_Policy".tr,
-                        style: TextStyle(
-                            color: tDarkOrangeColor,
-                            fontSize: isTab(context) ? 8.sp : 10.sp),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ],
+          _policyItem(
+            icon: Images.PRIVACT_POLICY,
+            title: "Privacy_Policy".tr,
+            onTap: () => LegalDocumentPage.open(
+                context, LegalDocumentPage.privacy, "Privacy Policy"),
           ),
-          SizedBox(
-            height: 2.h,
+          const Divider(height: 1, indent: 52, endIndent: 12),
+          _policyItem(
+            icon: Images.TERMS_CONDITIONS,
+            title: 'terms_conditions'.tr,
+            onTap: () => LegalDocumentPage.open(
+                context, LegalDocumentPage.terms, "Terms and Conditions"),
           ),
-          Row(
-            children: [
-              Image.asset(
-                Images.TERMS_CONDITIONS,
-                scale: isTab(context) ? 3 : 3.5,
-              ),
-              SizedBox(
-                width: 4.w,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      // onTap: () {
-                      //   Twl.forceNavigateTo(context, PqymentMethod());
-                      // },
-                      onTap: () => LegalDocumentPage.open(
-                          context, LegalDocumentPage.terms, "Terms and Conditions"),
-                      child: Text(
-                        'terms_conditions'.tr,
-                        style: TextStyle(
-                            color: tDarkOrangeColor,
-                            fontSize: isTab(context) ? 8.sp : 10.sp),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(
-            height: 2.h,
-          ),
-          Row(
-            children: [
-              Image.asset(
-                Images.REFUND_POLICY,
-                scale: isTab(context) ? 2.7 : 3.7,
-              ),
-              SizedBox(
-                width: 4.w,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      // onTap: () {
-                      //   Twl.forceNavigateTo(context, PaymentSelection());
-                      // },
-                      onTap: () => LegalDocumentPage.open(
-                          context, LegalDocumentPage.refund, "Refund Policy"),
-                      child: Text(
-                        "Cancellation & Refund Policy".tr,
-                        style: TextStyle(
-                            color: tDarkOrangeColor,
-                            fontSize: isTab(context) ? 8.sp : 10.sp),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ],
+          const Divider(height: 1, indent: 52, endIndent: 12),
+          _policyItem(
+            icon: Images.REFUND_POLICY,
+            title: "Cancellation & Refund Policy".tr,
+            onTap: () => LegalDocumentPage.open(
+                context, LegalDocumentPage.refund, "Refund Policy"),
           ),
         ],
       ),
     );
   }
   // <<< END: build - draws this screen/widget on the display
+
+  Widget _policyItem({
+    required String icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      minLeadingWidth: 32,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+      visualDensity: const VisualDensity(vertical: 1),
+      leading: Image.asset(icon, width: 24, height: 24, fit: BoxFit.contain),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: tDarkNavyblue,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios_rounded,
+        color: tDarkNavyblue.withValues(alpha: 0.55),
+        size: 16,
+      ),
+    );
+  }
 }
 // <<< END: _TermsConditionsCardState - the data and logic behind its screen

@@ -105,6 +105,10 @@ android/ ios/ web/           Platform packaging
 assets/                      Images and icons
 ```
 
+Home and Profile are tabs in one navigation shell. System Back from Profile
+returns to Home in that same shell; it must not create another tab shell on the
+navigation stack.
+
 Every source file starts with a short **WHAT / NOTES** block explaining it in plain words.
 Files marked **INACTIVE** are fully commented out and can be deleted safely.
 
@@ -113,7 +117,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted safely.
 | File | In plain words |
 |---|---|
 | `ApiHelper.dart` | The one door to the server; handles errors and retries |
-| `userApi.dart` | The list of every request the app can make |
+| `userApi.dart` | The list of every request the app can make; startup session checks time out after 10 seconds |
 | `servicesApi.dart` | Requests for the booking journey and fare estimate |
 | `sessionGuard.dart` | Logs the customer out if the server says the login is invalid |
 | `pushService.dart` | Push notifications (OneSignal) |
@@ -131,8 +135,13 @@ Files marked **INACTIVE** are fully commented out and can be deleted safely.
 | **OneSignal** | push notifications | App ID is in the app; the secret REST key is on the server only |
 | **Google Maps / Places / Directions / Distance Matrix** | maps, addresses, distances and fares | Google Cloud account |
 | **Google Play services** | reading the SMS with consent | Android |
+| **Sentry** | crash and uncaught-error reports | configured at build time with `SENTRY_DSN`; disabled when unset |
 
 **Firebase has been removed completely** (messaging, storage, database, dynamic links).
+Sentry is the Firebase-free crash reporting service. Reports are configured without
+default personal information or performance traces. Before enabling it in a public
+release, disclose crash reporting in the Privacy Policy and configure the Sentry
+project's access, retention and data-region settings.
 
 ---
 
@@ -159,6 +168,11 @@ Files marked **INACTIVE** are fully commented out and can be deleted safely.
 | Run against a **local** backend (USB phone) | start the backend on port 8080, `adb reverse tcp:8080 tcp:8080`, then `flutter run --dart-define=API_BASE_URL=http://localhost:8080/api` |
 | Build an installable test file | `flutter build apk --debug` → `build/app/outputs/flutter-apk/app-debug.apk` |
 | Push notifications | built in; override the App ID with `--dart-define=ONESIGNAL_APP_ID=...` |
+| Enable crash reporting | add `--dart-define=SENTRY_DSN=<project-dsn>` to the build command; omit it to keep reporting disabled |
+
+The app's Dart SDK floor is now 3.5.0 for the Android-compatible Sentry SDK. A
+100,000-account target is not a verified capacity claim: it needs a separate load
+test against staging, with an agreed peak-concurrency target and backend monitoring.
 
 Tested flow on a real phone against the local backend: login with auto-read OTP → home →
 Drivers → pick drop → estimate → confirm → My Bookings → cancel.
@@ -239,6 +253,35 @@ changing screens, providers or API calls.
 The project is now a git repository (branch `main`, first commit `cf4e94e`). The signing
 keystore folder (`jks/`), `android/key.properties`, `android/local.properties` and `.claude/` are
 kept out of git through `.git/info/exclude`, so they are never committed by accident.
+
+### 7.5 Reliability, crash reporting and scale readiness (updated 26 Oct 2026)
+
+- **Navigation:** Home and Profile stay in the same bottom-navigation shell. System Back from
+  Profile selects Home instead of pushing a second shell. The shell uses `PopScope` for Android
+  predictive-back compatibility.
+- **Startup:** restoring a saved login checks the session with a 10-second timeout. A slow or
+  unavailable backend no longer leaves that request waiting indefinitely; the app can continue
+  without the restored session. Push initialization and Android notification-channel setup are
+  isolated so their failures are reported and do not prevent the app from opening.
+- **Connectivity:** the connectivity stream subscription is cancelled when its screen wrapper is
+  disposed. Network type is only a hint; requests still report their own connection and timeout
+  errors.
+- **TLS:** the app no longer globally accepts invalid HTTPS certificates. Local development over
+  `http://localhost` continues to work, but HTTPS servers must present a valid certificate chain.
+- **Crash reporting:** the app uses `sentry_flutter` (not Firebase). Configure a Sentry project DSN
+  at build time with `--dart-define=SENTRY_DSN=<project-dsn>`. Without a DSN, remote reporting is
+  disabled. Default personal information and performance tracing are disabled. Before enabling
+  it for customers, publish the relevant Privacy Policy disclosure and set appropriate access,
+  retention and data-region controls in the Sentry project.
+- **Compatibility:** the Dart SDK minimum in `pubspec.yaml` is `3.5.0`, required by the chosen
+  Android-compatible Sentry SDK. Developers and CI must use a compatible Flutter/Dart toolchain.
+- **Verification performed:** `flutter analyze` on the changed Dart files and `flutter test` pass;
+  the debug APK was built, installed and launched on the connected Android phone without a fatal
+  launch error. These checks do not exercise authenticated flows or confirm remote Sentry delivery.
+- **100,000 customers:** no capacity guarantee has been established. Registered account count is
+  not the same as concurrent load. Agree on peak concurrent users and critical journey targets,
+  then run controlled load tests against staging while monitoring the API, databases, queues,
+  SMS/OTP provider, maps quotas, push delivery and error/latency rates. Do not load-test production.
 
 ---
 
@@ -607,6 +650,19 @@ Because the app now has several services, the Profile option **My Rides** became
 - **Not done yet:** tapping a row does not open the booking or ride details; no download of a
   statement; a split deployment (each service on its own database) needs the customer API to ask
   each service for its part instead of reading the shared tables.
+
+## 14. Profile and policy screen presentation (updated 26 Oct 2026)
+
+- Profile actions are presented as full-width, rounded tap targets with aligned icons and visible
+  chevrons. The navigation destinations and server calls are unchanged.
+- Notifications, Refer & Earn, Support, and legal documents share Rubia's orange / navy palette,
+  clearer text hierarchy, consistent spacing, and larger touch targets. Empty and loading states use
+  centered, branded placeholders.
+- Privacy Policy, Terms and Conditions, and Cancellation & Refund Policy remain server-authored
+  documents loaded by `globalWidgets/legalDocumentPage.dart`; the app does not provide or hardcode
+  legal wording. Cancellation eligibility and fees remain backend decisions.
+- The Figma reference was supplied for this polish, but its design URL returned HTTP 403 from this
+  environment. The implementation therefore follows the existing Rubia visual language.
 
 ---
 ## Live inventory (generated)

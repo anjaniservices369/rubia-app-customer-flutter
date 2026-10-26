@@ -5,15 +5,11 @@
 // import 'dart:developer';
 
 import 'package:base_project_flutter/api_services/userApi.dart';
-import 'package:base_project_flutter/constants/imageConstant.dart';
 import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:get/get_utils/get_utils.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:sizer/sizer.dart';
 import '../../../../../../constants/constants.dart';
 import '../../../../../../responsive.dart';
 import '../../../../globalFuctions/globalFunctions.dart';
@@ -97,10 +93,11 @@ class _NotifactionpageState extends State<Notifactionpage> {
         );
       },
       child: Scaffold(
+        backgroundColor: tBackground,
         appBar: AppBar(
           elevation: 0,
           titleSpacing: 7,
-          backgroundColor: tDarkNavyblue,
+          backgroundColor: tYellow,
           leading: GestureDetector(
             onTap: () {
               widget.boolnotificationPage != true
@@ -124,10 +121,10 @@ class _NotifactionpageState extends State<Notifactionpage> {
           ),
           title: Text(
             'notifications'.tr,
-            style: GoogleFonts.mulish(
-              color: tWhite,
+            style: TextStyle(
+              color: tDarkNavyblue,
               fontWeight: FontWeight.w700,
-              fontSize: isTab(context) ? 10.sp : 17.sp,
+              fontSize: 18,
             ),
           ),
           actions: [
@@ -137,33 +134,30 @@ class _NotifactionpageState extends State<Notifactionpage> {
                 if (res != null && res['status'] == 'OK') {
                   Twl.forceNavigateTo(context, Notifactionpage());
                 } else {
-                  Twl.createAlert(context, 'Oops', res['error'].toString());
+                  Twl.createAlert(
+                    context,
+                    'Oops',
+                    res == null
+                        ? 'Please try again.'
+                        : '${res['error'] ?? 'Please try again.'}',
+                  );
                 }
               },
-              icon: Icon(
-                Icons.more_vert,
-                color: tDarkNavyblue,
-              ),
-              tooltip: "  ",
+              icon: Icon(Icons.more_vert, color: tDarkNavyblue),
+              tooltip: 'More notification actions',
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(
-                  Radius.circular(4.0),
-                ),
-              ),
-              offset: Offset(
-                -40,
-                -0,
+                borderRadius: BorderRadius.circular(12),
               ),
               color: tWhite,
               itemBuilder: (context) => [
                 PopupMenuItem(
-                  height: 0.4.h,
+                  height: 48,
                   child: Text(
                     'clear'.tr,
-                    style: GoogleFonts.mulish(
+                    style: TextStyle(
                       color: tPrimaryColor,
                       fontWeight: FontWeight.w500,
-                      fontSize: isTab(context) ? 9.sp : 12.sp,
+                      fontSize: 14,
                     ),
                   ),
                   value: 1,
@@ -174,159 +168,137 @@ class _NotifactionpageState extends State<Notifactionpage> {
         ),
         body: Consumer<MyNotifactionProvider>(
           builder: (context, provider, child) {
-            if (provider.myFavoritesGetting) {
+            if (provider.myFavoritesGetting &&
+                provider.myFavoritesList.isEmpty) {
               return Center(
-                child: SpinKitThreeBounce(
-                  color: tPrimaryColor,
-                  size: 20.0,
-                ),
+                child: CircularProgressIndicator(color: tPrimaryColor),
               );
             } else if (provider.myFavoritesList.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: 40.h,
-                      width: 50.w,
-                      child: Image.asset(
-                        Images.NO_NOTIFICATIONS,
-                        scale: 2, // Replace with the path of your error image
-                        // fit: BoxFit.cover,
-                      ),
-                    ),
-                    Text(
-                      'No Notifications Yet',
-                      style: GoogleFonts.mulish(
-                        color: tDarkOrangeColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTab(context) ? 11.sp : 15.sp,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Text(
-                        'You have no notifications right now. Come back later',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.mulish(
-                          color: tlightGray,
-                          fontWeight: FontWeight.w500,
-                          fontSize: isTab(context) ? 9.sp : 12.sp,
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          color: tPrimaryColor.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.notifications_none_rounded,
+                          color: tPrimaryColor,
+                          size: 38,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 18),
+                      Text(
+                        'No Notifications Yet',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: tDarkNavyblue,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'You have no notifications right now. Come back later',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: tGray,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             } else {
               return ListView.builder(
-                itemCount: provider.myFavoritesList.length,
-                physics: ScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                itemCount: provider.myFavoritesList.length +
+                    (provider.myFavoritesGetting ? 1 : 0),
+                physics: const AlwaysScrollableScrollPhysics(),
                 controller: scrollController,
-                scrollDirection: Axis.vertical,
-                shrinkWrap: true,
                 itemBuilder: (BuildContext context, int index) {
+                  if (index == provider.myFavoritesList.length) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
+                        child: CircularProgressIndicator(color: tPrimaryColor),
+                      ),
+                    );
+                  }
                   var notificationDetails = provider.myFavoritesList[index];
-                  return GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: 4.w,
-                        vertical: 0.6.h,
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 4.w,
-                        vertical: 1.h,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: tWhite,
-                        boxShadow: [tBoxShadow],
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: tWhite,
+                      boxShadow: const [tBoxShadow],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: tPrimaryColor.withValues(alpha: 0.12),
+                          ),
+                          child: Icon(
+                            Icons.notifications_active_outlined,
+                            color: tPrimaryColor,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: tPrimaryColor.withOpacity(0.2),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(5.0),
-                                  child: Icon(
-                                    Icons.notifications,
-                                    color: tPrimaryColor,
-                                  ),
+                              Text(
+                                '${notificationDetails['title'] ?? ''}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: tDarkNavyblue,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  height: 1.3,
                                 ),
                               ),
-                              SizedBox(
-                                width: 3.w,
+                              const SizedBox(height: 6),
+                              Text(
+                                '${notificationDetails['description'] ?? ''}',
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: tGray,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
                               ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width:
-                                          MediaQuery.of(context).size.width / 1,
-                                      child: Text(
-                                        notificationDetails['title'],
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.mulish(
-                                          color: tDarkNavyblue,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize:
-                                              isTab(context) ? 8.sp : 12.sp,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: 0.5.h,
-                                    ),
-                                    Container(
-                                      width:
-                                          MediaQuery.of(context).size.width / 1,
-                                      child: Text(
-                                        notificationDetails['description'],
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.mulish(
-                                          color: tDarkOrangeColor,
-                                          fontWeight: FontWeight.w500,
-                                          fontSize:
-                                              isTab(context) ? 7.sp : 8.5.sp,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                              const SizedBox(height: 10),
+                              Text(
+                                Twl.dateFormate(
+                                    notificationDetails['created_on']),
+                                style: TextStyle(
+                                  color: tDarkNavyblue.withValues(alpha: 0.65),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(
-                            height: 1.5.h,
-                          ),
-                          Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              Twl.dateFormate(
-                                  notificationDetails['created_on']),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.mulish(
-                                color: tDarkOrangeColor,
-                                fontWeight: FontWeight.w500,
-                                fontSize: isTab(context) ? 7.sp : 9.sp,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -340,7 +312,6 @@ class _NotifactionpageState extends State<Notifactionpage> {
   // <<< END: build - draws this screen/widget on the display
 }
 // <<< END: _NotifactionpageState - the data and logic behind its screen
-
 
 // class NotificationPagination extends StatefulWidget {
 //   const NotificationPagination({
@@ -363,7 +334,6 @@ class _NotifactionpageState extends State<Notifactionpage> {
 //             child: Text('End of data'),
 //           );
 //         }
-
 
 //   @override
 

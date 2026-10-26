@@ -10,7 +10,6 @@ import 'package:base_project_flutter/views/profilePage/components/emergencyConta
 import 'package:base_project_flutter/views/profilePage/components/notifactionPage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sizer/sizer.dart';
 
 import '../../../constants/constants.dart';
 import '../../../constants/imageConstant.dart';
@@ -37,142 +36,46 @@ class _AllOptionsCardState extends State<AllOptionsCard> {
     return Column(
       children: [
         Container(
-          margin: EdgeInsets.symmetric(horizontal: 1.5.w),
-          padding: EdgeInsets.symmetric(vertical: 1.h, horizontal: 0.w),
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
               color: tWhite,
               boxShadow: [tBackbtnBoxShadow],
-              borderRadius: BorderRadiusDirectional.circular(10)),
+              borderRadius: BorderRadius.circular(16)),
           child: Column(
             children: [
-              Column(
-                children: [
-                  ListTile(
-                    onTap: () {
-                      // Every service's payments in one place, by day and by month.
-                      Twl.navigateTo(context, const MyTransactionsPage());
-                    },
-                    leading: Image.asset(
-                      Images.MY_RIDES,
-                      scale: 3.5,
-                    ),
-                    title: Text(
-                      'my_transactions'.tr,
-                      style: TextStyle(color: tSecondaryColor),
-                    ),
-                  ),
-                  // ListTile(
-                  //   onTap: () {
-                  //     Twl.navigateTo(
-                  //         context,
-                  //         BottomNavigation(
-                  //           tabIndexId: 2,
-                  //         ));
-                  //   },
-                  //   title: Text(
-                  //     'wallet'.tr,
-                  //     style: TextStyle(color: tSecondaryColor),
-                  //   ),
-                  //   trailing: Icon(
-                  //     Icons.arrow_forward_ios,
-                  //     color: tWhite,
-                  //     size: 20,
-                  //   ),
-                  // ),
-                  ListTile(
-                    onTap: () {
-                      // Twl.navigateTo(context, ReferAndEarn());
-                      Twl.navigateTo(context, Notifactionpage());
-                    },
-                    leading: Image.asset(
-                      Images.NOTIFICATIONS,
-                      scale: 3.5,
-                    ),
-                    title: Text(
-                      'notifications'.tr,
-                      style: TextStyle(color: tSecondaryColor),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      color: tWhite,
-                      size: 20,
-                    ),
-                  ),
-                  ListTile(
-                    onTap: () {
-                      Twl.navigateTo(context, FavouriteLocation());
-                    },
-                    
-                    leading: Image.asset(
-                      Images.FAV_LOCATION,
-                      scale: 3.5,
-                    ),
-                    title: Text(
-                      'Favorites_Location'.tr,
-                      style: TextStyle(color: tSecondaryColor),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      color: tWhite,
-                      size: 20,
-                    ),
-                  ),
-                  ListTile(
-                    onTap: () {
-                      // Twl.navigateTo(context, Support());
-                      Twl.navigateTo(context, EmergencyContact());
-                    },
-                    leading: Image.asset(
-                      Images.EMERGENCY_CONTACT,
-                      scale: 3.5,
-                    ),
-                    title: Text(
-                      'emergency_contact'.tr,
-                      style: TextStyle(color: tSecondaryColor),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      color: tWhite,
-                      size: 20,
-                    ),
-                  ),
-                  ListTile(
-                    onTap: () {
-                      Twl.navigateTo(context, ReferAndEarn());
-                    },
-                    leading: Image.asset(
-                      Images.REFER_EARN,
-                      scale: 3.5,
-                    ),
-                    title: Text(
-                      'refer_&_earn'.tr,
-                      style: TextStyle(color: tSecondaryColor),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      color: tWhite,
-                      size: 20,
-                    ),
-                  ),
-                  ListTile(
-                    onTap: () {
-                      Twl.navigateTo(context, Support());
-                    },
-                    leading: Image.asset(
-                      Images.SUPPORT,
-                      scale: 3.5,
-                    ),
-                    title: Text(
-                      'support'.tr,
-                      style: TextStyle(color: tSecondaryColor),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      color: tWhite,
-                      size: 20,
-                    ),
-                  ),
-                ],
+              _optionTile(
+                image: Images.MY_RIDES,
+                title: 'my_transactions'.tr,
+                onTap: () {
+                  // Every service's payments in one place, by day and by month.
+                  Twl.navigateTo(context, const MyTransactionsPage());
+                },
+              ),
+              _optionTile(
+                image: Images.NOTIFICATIONS,
+                title: 'notifications'.tr,
+                onTap: () => Twl.navigateTo(context, Notifactionpage()),
+              ),
+              _optionTile(
+                image: Images.FAV_LOCATION,
+                title: 'Favorites_Location'.tr,
+                onTap: () => Twl.navigateTo(context, FavouriteLocation()),
+              ),
+              _optionTile(
+                image: Images.EMERGENCY_CONTACT,
+                title: 'emergency_contact'.tr,
+                onTap: () => Twl.navigateTo(context, EmergencyContact()),
+              ),
+              _optionTile(
+                image: Images.REFER_EARN,
+                title: 'refer_&_earn'.tr,
+                onTap: () => Twl.navigateTo(context, ReferAndEarn()),
+              ),
+              _optionTile(
+                image: Images.SUPPORT,
+                title: 'support'.tr,
+                onTap: () => Twl.navigateTo(context, Support()),
               ),
             ],
           ),
@@ -181,5 +84,67 @@ class _AllOptionsCardState extends State<AllOptionsCard> {
     );
   }
   // <<< END: build - draws this screen/widget on the display
+
+  Widget _optionTile({
+    required String image,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: tFieldColor,
+        border: Border.all(color: tDivider.withValues(alpha: 0.7)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: tWhite,
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      image,
+                      width: 22,
+                      height: 22,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: tDarkNavyblue,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: tDarkNavyblue.withValues(alpha: 0.55),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 // <<< END: _AllOptionsCardState - the data and logic behind its screen

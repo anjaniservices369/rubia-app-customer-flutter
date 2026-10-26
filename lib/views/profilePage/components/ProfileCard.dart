@@ -125,7 +125,6 @@ class _ProfileCardState extends State<ProfileCard> {
       }
       // sharedPreferences.setString('emailId', check['detail']['username']);
     }
-
   }
   // <<< END: checkLoginStatus - checks login status
 
@@ -139,7 +138,6 @@ class _ProfileCardState extends State<ProfileCard> {
   //         maxHeight: 480,
   //         maxWidth: 640,
   //         imageQuality: 50);
-
 
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
@@ -160,8 +158,7 @@ class _ProfileCardState extends State<ProfileCard> {
             size: 20.0,
           )
         : GestureDetector(
-            child:
-                Center(
+            child: Center(
               child: Container(
                 // margin: EdgeInsets.only(
                 //     left: 10,
@@ -174,15 +171,17 @@ class _ProfileCardState extends State<ProfileCard> {
                 //                 ? 10
                 //                 : 10),
                 child: Card(
-                  elevation: 1,
+                  elevation: 0,
                   // color: tBoxShadow,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8))),
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(color: tDivider.withValues(alpha: 0.7)),
+                  ),
                   child: Container(
-                      padding: EdgeInsets.symmetric(
-                          vertical: isTab(context) ? 30 : 16),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 12),
                       width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.17,
+                      height: MediaQuery.of(context).size.height * 0.18,
                       child: Row(
                         children: [
                           SizedBox(
@@ -217,7 +216,10 @@ class _ProfileCardState extends State<ProfileCard> {
                                   width: isTab(context) ? 145 : 95,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    image: checkDetails['selfie'] != null
+                                    image: checkDetails['selfie'] != null &&
+                                            checkDetails['selfie']
+                                                .toString()
+                                                .isNotEmpty
                                         ? DecorationImage(
                                             image: NetworkImage(
                                               checkDetails['selfie'],
@@ -230,10 +232,22 @@ class _ProfileCardState extends State<ProfileCard> {
                                                     NetworkImage(profileImage),
                                                 fit: BoxFit.cover,
                                               )
-                                            : null, // Remove the decoration image if profileImage is empty
+                                            : null,
                                     border: Border.all(
                                         color: tDarkNavyblue, width: 1.5),
                                   ),
+                                  child: (checkDetails['selfie'] == null ||
+                                              checkDetails['selfie']
+                                                  .toString()
+                                                  .isEmpty) &&
+                                          profileImage.isEmpty
+                                      ? Icon(
+                                          Icons.person_rounded,
+                                          color: tDarkNavyblue.withValues(
+                                              alpha: 0.55),
+                                          size: 48,
+                                        )
+                                      : null,
                                 ),
                               ),
                               Positioned(
@@ -334,15 +348,13 @@ class _ProfileCardState extends State<ProfileCard> {
                               )
                             ],
                           ),
-                          SizedBox(
-                            width: 3.w,
-                          ),
+                          SizedBox(width: 3.w),
                           Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                width: 58.w,
+                                width: 56.w,
                                 child: Text(
                                   // 'Name',
                                   checkDetails['first_name'].toString() +
@@ -353,7 +365,7 @@ class _ProfileCardState extends State<ProfileCard> {
                                   style: GoogleFonts.mulish(
                                       color: tSecondaryColor,
                                       fontWeight: FontWeight.w700,
-                                      fontSize: isTab(context) ? 12.sp : 14.sp),
+                                      fontSize: 18),
                                 ),
                               ),
                               SizedBox(height: 1.h),
@@ -362,34 +374,46 @@ class _ProfileCardState extends State<ProfileCard> {
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.mulish(
                                     color: tSecondaryColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: isTab(context) ? 12.sp : 12.sp),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14),
                               ),
                               SizedBox(height: isTab(context) ? 1 : 1.h),
-                              GestureDetector(
-                                onTap: () {
-                                  Twl.navigateTo(
+                              Material(
+                                color: tPrimaryColor,
+                                borderRadius: BorderRadius.circular(10),
+                                child: InkWell(
+                                  onTap: () {
+                                    Twl.navigateTo(
                                       context,
-                                      ProfilePage(
-                                          // checkDetails: widget.checkDetails
-                                          ));
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: tPrimaryColor,
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(8)),
-                                  ),
+                                      ProfilePage(),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
                                   child: Padding(
-                                      padding: const EdgeInsets.all(6.0),
-                                      child: Text(
-                                        'edit_profile'.tr,
-                                        style: GoogleFonts.mulish(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          size: 17,
+                                          color: tWhite,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'edit_profile'.tr,
+                                          style: GoogleFonts.mulish(
                                             color: tWhite,
                                             fontWeight: FontWeight.w700,
-                                            fontSize:
-                                                isTab(context) ? 12.sp : 10.sp),
-                                      )),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],

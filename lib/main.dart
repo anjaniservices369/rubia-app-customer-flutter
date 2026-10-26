@@ -1,4 +1,4 @@
-// @dart=3.2.6
+// @dart = 3.2
 // =============================================================================
 // WHAT : App entry point. Starts the app, restores the saved login, shows the
 //        splash screen and decides the first screen (onboarding, personal
@@ -31,7 +31,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
-import 'dart:io';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'constants/imageConstant.dart';
 import 'globalFuctions/globalFunctions.dart';
 import 'providers/notifactionProvider.dart';
@@ -44,19 +44,39 @@ FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 // >>> START: main - program start: prepares push, reads the saved login and opens the app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  HttpOverrides.global = MyHttpOverrides();
-  await PushService.init();
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = const String.fromEnvironment('SENTRY_DSN');
+      options.sendDefaultPii = false;
+      options.tracesSampleRate = 0;
+    },
+    appRunner: _startApp,
+  );
+}
+
+Future<void> _startApp() async {
+  try {
+    await PushService.init();
+  } catch (error, stackTrace) {
+    debugPrint('Push initialization failed: $error\n$stackTrace');
+    await Sentry.captureException(error, stackTrace: stackTrace);
+  }
   if (!kIsWeb) {
-    channel = AndroidNotificationChannel(
-      'high_importance_channel', // id
-      'High Importance Notifications', // title
-      importance: Importance.high,
-    );
-    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    await flutterLocalNotificationsPlugin
-        ?.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel!);
+    try {
+      channel = AndroidNotificationChannel(
+        'high_importance_channel',
+        'High Importance Notifications',
+        importance: Importance.high,
+      );
+      flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+      await flutterLocalNotificationsPlugin
+          ?.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(channel!);
+    } catch (error, stackTrace) {
+      debugPrint('Notification channel setup failed: $error\n$stackTrace');
+      await Sentry.captureException(error, stackTrace: stackTrace);
+    }
   }
   SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
   SharedPreferences pref = await SharedPreferences.getInstance();
@@ -85,13 +105,17 @@ void main() async {
   }
   sharedPreferences.remove('service_type');
   pref.remove('serviceType');
-  runApp(MyApp(
-    checkAuth: checkAuth,
-    checkMail: checkMail,
-    checkDetails: checkDetails,
-    emergencyContact: emergencyContactDetails,
-    key: MyApp.navigatorKey,
-  ));
+  runApp(
+    SentryWidget(
+      child: MyApp(
+        checkAuth: checkAuth,
+        checkMail: checkMail,
+        checkDetails: checkDetails,
+        emergencyContact: emergencyContactDetails,
+        key: MyApp.navigatorKey,
+      ),
+    ),
+  );
 }
 // <<< END: main - program start: prepares push, reads the saved login and opens the app
 
@@ -213,20 +237,26 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
   // back - not because the phone was actually offline.
   ConnectivityResult _connectivityResult = ConnectivityResult.wifi;
   Timer? _offlineDebounce;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
 
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     super.initState();
     checkConnectivity();
-    Connectivity().onConnectivityChanged.listen(_handleResult);
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_handleResult);
   }
   // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: checkConnectivity - checks whether the phone is online
-  void checkConnectivity() async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-    _handleResult(connectivityResult);
+  Future<void> checkConnectivity() async {
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (mounted) _handleResult(connectivityResult);
+    } catch (error, stackTrace) {
+      debugPrint('Connectivity check failed: $error\n$stackTrace');
+    }
   }
   // <<< END: checkConnectivity - checks whether the phone is online
 
@@ -251,6 +281,7 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
   @override
   void dispose() {
     _offlineDebounce?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
   // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
@@ -275,9 +306,10 @@ class NoInternetDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: tBlue,
-      body: WillPopScope(
-        onWillPop: () {
-          return Twl.willpopAlert(context);
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) Twl.willpopAlert(context);
         },
         child: Stack(
           children: [
@@ -339,16 +371,3 @@ class NoInternetDialog extends StatelessWidget {
   // <<< END: build - draws this screen/widget on the display
 }
 // <<< END: NoInternetDialog - screen/widget
-
-// >>> START: MyHttpOverrides - helper class
-class MyHttpOverrides extends HttpOverrides {
-  // >>> START: createHttpClient - allows the app to accept the server's certificate settings
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-  }
-  // <<< END: createHttpClient - allows the app to accept the server's certificate settings
-}
-// <<< END: MyHttpOverrides - helper class

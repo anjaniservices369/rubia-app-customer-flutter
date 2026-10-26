@@ -69,7 +69,8 @@ class _LegalDocumentPageState extends State<LegalDocumentPage> {
           ..setBackgroundColor(Colors.white)
           ..setNavigationDelegate(NavigationDelegate(
               onNavigationRequest: (_) => NavigationDecision.prevent))
-          ..loadHtmlString(_page('${d['description']}', '${d['updated_on'] ?? ''}'));
+          ..loadHtmlString(
+              _page('${d['description']}', '${d['updated_on'] ?? ''}'));
         if (!mounted) return;
         setState(() {
           _title = '${d['title'] ?? ''}'.trim();
@@ -89,7 +90,8 @@ class _LegalDocumentPageState extends State<LegalDocumentPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'This page could not be loaded. Check your internet connection.';
+        _error =
+            'This page could not be loaded. Check your internet connection.';
         _loading = false;
       });
     }
@@ -101,10 +103,15 @@ class _LegalDocumentPageState extends State<LegalDocumentPage> {
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{font-family:sans-serif;color:#1b2a49;line-height:1.55;font-size:15px;margin:0;padding:16px 18px 32px;}
-h1,h2,h3{color:#0d2b5e;line-height:1.25;} h2{font-size:20px;} h3{font-size:17px;}
-img,table{max-width:100%;} a{color:#0d2b5e;}
-.updated{color:#8a8f99;font-size:12px;margin-top:24px;}
+body{font-family:sans-serif;color:#1b2a49;background:#ffffff;font-size:16px;line-height:1.65;margin:0;padding:20px 20px 36px;}
+h1,h2,h3,h4{color:#144272;line-height:1.3;margin-top:1.4em;margin-bottom:.55em;}
+h1{font-size:26px;} h2{font-size:21px;} h3{font-size:18px;} h4{font-size:16px;}
+p,li{margin-top:.45em;margin-bottom:.65em;}
+ul,ol{padding-left:1.4em;}
+img,table{max-width:100%;height:auto;} table{border-collapse:collapse;display:block;overflow-x:auto;}
+th,td{padding:8px;border:1px solid #e5eaf0;} a{color:#144272;}
+blockquote{margin:1em 0;padding:10px 14px;border-left:3px solid #ff8f0c;background:#fff8ed;}
+.updated{color:#757575;font-size:12px;margin-top:28px;border-top:1px solid #e5eaf0;padding-top:12px;}
 </style></head><body>$body
 ${updated.isEmpty ? '' : '<p class="updated">Last updated: $updated</p>'}
 </body></html>''';
@@ -113,37 +120,94 @@ ${updated.isEmpty ? '' : '<p class="updated">Last updated: $updated</p>'}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: tWhite,
+      backgroundColor: tBackground,
       appBar: AppBar(
-        backgroundColor: tWhite,
+        backgroundColor: tYellow,
         elevation: 0,
         iconTheme: IconThemeData(color: tDarkNavyblue),
         title: Text(
             (_title != null && _title!.isNotEmpty) ? _title! : widget.title,
-            style: TextStyle(color: tDarkNavyblue, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+              color: tDarkNavyblue,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            )),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(color: tPrimaryColor),
+            )
           : _error != null
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.description_outlined, size: 48, color: tDarkNavyblue),
-                      const SizedBox(height: 12),
-                      Text(_error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: tDarkNavyblue, fontSize: 16)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: tPrimaryColor),
-                          onPressed: _load,
-                          child: const Text('Try again',
-                              style: TextStyle(color: Colors.white))),
-                    ]),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: tWhite,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: const [tBoxShadow],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: tPrimaryColor.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.description_outlined,
+                                size: 32,
+                                color: tPrimaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: tDarkNavyblue,
+                                fontSize: 15,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: tPrimaryColor,
+                                  foregroundColor: tWhite,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: _load,
+                                child: const Text(
+                                  'Try again',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 )
-              : WebViewWidget(controller: _controller!),
+              : Container(
+                  color: tWhite,
+                  child: WebViewWidget(controller: _controller!),
+                ),
     );
   }
 }
