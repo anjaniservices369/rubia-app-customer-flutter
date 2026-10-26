@@ -2,6 +2,8 @@
 // WHAT : The bottom tab bar: Home, Bookings, Profile.
 // NOTES: Hosts the three main screens.
 // =============================================================================
+import 'dart:async';
+
 import 'package:base_project_flutter/responsive.dart';
 import 'package:base_project_flutter/taxiservices/rideservices/rideLayout.dart';
 import 'package:base_project_flutter/views/homePage/homePage.dart';
@@ -12,6 +14,7 @@ import '../../constants/constants.dart';
 import '../../constants/imageConstant.dart';
 import '../../globalFuctions/globalFunctions.dart';
 import '../Bookings/bookingPageView.dart';
+import '../Bookings/components/rateRide.dart';
 import '../PersonalDetails/personalDetailsView.dart';
 
 // >>> START: BottomNavigation - screen/widget shell (the visible part is in its State class)
@@ -35,7 +38,11 @@ class BottomNavigation extends StatefulWidget {
 // <<< END: BottomNavigation - screen/widget shell (the visible part is in its State class)
 
 // >>> START: _BottomNavigationState - the data and logic behind its screen
-class _BottomNavigationState extends State<BottomNavigation> {
+class _BottomNavigationState extends State<BottomNavigation>
+    with WidgetsBindingObserver {
+  // Checks whether the ride just booked has been completed (see rateRide.dart).
+  Timer? _rideTimer;
+
   // >>> START: checkBottomIndex - checks bottom index
   void checkBottomIndex() {
     setState(() {
@@ -59,6 +66,16 @@ class _BottomNavigationState extends State<BottomNavigation> {
     super.initState();
     checkBottomIndex();
 
+    // As soon as the ride is completed, ask the customer to rate the driver,
+    // whichever screen they are on.
+    WidgetsBinding.instance.addObserver(this);
+    _rideTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (mounted) RideRatingPrompt.check(context);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) RideRatingPrompt.check(context);
+    });
+
     // Push notifications are handled by PushService (OneSignal).
 
     if (widget.showRegistrationSheet) {
@@ -77,6 +94,24 @@ class _BottomNavigationState extends State<BottomNavigation> {
     }
   }
   // <<< END: initState - runs once when the screen opens - sets up data and listeners
+
+  // >>> START: didChangeAppLifecycleState - checks the ride again when the app comes back
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      RideRatingPrompt.check(context);
+    }
+  }
+  // <<< END: didChangeAppLifecycleState - checks the ride again when the app comes back
+
+  // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
+  @override
+  void dispose() {
+    _rideTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
 
   // >>> START: build - draws this screen/widget on the display
   @override

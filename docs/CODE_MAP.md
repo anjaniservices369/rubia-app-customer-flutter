@@ -177,6 +177,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `bookingHistoryList.dart` | List of past bookings with paging. | Server: list-bookings. |
 | `bookingcard.dart` | Booking summary card used in lists. | Visual component. |
 | `invoiceCardWidget.dart` | INACTIVE: whole file is commented out. | **UNUSED: no screen imports it** Safe to delete. |
+| `rateRide.dart` | Asks the customer to rate the driver as soon as a ride is completed, wherever they are in the app, instead of leaving the rating to the Completed rides list. | Server: view-booking (status), add-review. The active booking id is kept in the phone's saved data ('booking_id', written when the booking is confirmed). 'ride_resolved_id' remembers the booking that was already handled, so one ride is never asked twice. 'Later' still leaves the rating available on the ride's details. |
 | `ridehistoryDetails.dart` | Details of a finished taxi ride. | Server: taxi ride info. |
 | `riderDetailsPayment.dart` | Booking details with the driver, OTP and payment; polls the booking status. | Server: view-booking-details. |
 | `timeDistanceCard.dart` | Card with trip time and distance. | **UNUSED: no screen imports it** Visual component. |

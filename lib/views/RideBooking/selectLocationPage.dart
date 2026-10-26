@@ -107,7 +107,15 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
   // <<< END: _editTime - opens the date/time sheet and refreshes the screen
 
   // >>> START: _next - checks the choices, gets the fare and opens the estimate page
-  Future<void> _next(TripOptionsProvider provider) async {
+  Future<void> _next(TripOptionsProvider provider, bool placesChosen) async {
+    if (!placesChosen) {
+      // One-way needs pickup and drop; round trip needs the pickup.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(provider.pickupAddress.isEmpty
+              ? 'pick_up_location'.tr
+              : 'drop_location'.tr)));
+      return;
+    }
     if (provider.carModel.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('No vehicles found. Please try again.')));
@@ -144,8 +152,7 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
       tripOptionsProvider.getCurrentLocation(context);
     }
 
-    // 2. The car-type tabs and the Next button only appear when the trip is
-    //    complete enough to price:
+    // 2. Next only goes on when the trip is complete enough to price:
     //      one-way    -> pickup AND drop are both filled
     //      round trip -> pickup is enough (the driver returns to it)
     final bool pickupFilled = tripOptionsProvider.pickupAddress != null &&
@@ -165,6 +172,10 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
       onWillPop: _goHome,
       child: DefaultTabController(
       length: 2,
+      // Opens on the gear type already chosen (the screen is rebuilt after
+      // the map pickers).
+      initialIndex:
+          tripOptionsProvider.carType == CAR_TYPE_MANUAL ? 1 : 0,
       child: Scaffold(
         // ---- Header: back arrow + "Book a driver" ----
         appBar: AppBar(
@@ -255,6 +266,84 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                   height: 1.h,
                 ),
                 // -------------------------------------------------------
+                // CARD 0b - "Automatic | Manual" tab bar (the gear type of
+                // the customer's car) and, below it, the car types (SUV+,
+                // SUV, Sedan, Hatchback) for the chosen gear type, loaded
+                // from the server. Chosen first, before the places.
+                // -------------------------------------------------------
+                SizedBox(
+                  height: 60,
+                  width: MediaQuery.of(context).size.width / 1.25,
+                  child: Padding(
+                    padding: const EdgeInsets.all(1.0),
+                    child: AppBar(
+                      backgroundColor: tWhite,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      bottom: TabBar(
+                        onTap: (index) async {
+                          // left tab = Automatic, right = Manual
+                          if (index == 0) {
+                            tripOptionsProvider.setCarType(CAR_TYPE_AUTOMATIC);
+                          } else {
+                            tripOptionsProvider.setCarType(CAR_TYPE_MANUAL);
+                          }
+                          setState(() {});
+                        },
+                        labelColor: tWhite,
+                        unselectedLabelColor: tPrimaryColor,
+                        labelPadding: EdgeInsets.all(5),
+                        indicatorPadding: EdgeInsets.all(4),
+                        indicator: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: tPrimaryColor,
+                        ),
+                        tabs: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 10.0, right: 10.0),
+                            child: Tab(
+                              child: Text(
+                                'automatic'.tr,
+                                style: TextStyle(
+                                  fontSize: isTab(context) ? 10.sp : 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 20.0, right: 20.0),
+                            child: Tab(
+                              child: Text(
+                                'manual'.tr,
+                                style: TextStyle(
+                                  fontSize: isTab(context) ? 10.sp : 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  height: MediaQuery.of(context).size.height / 5,
+                  child: TabBarView(
+                    // Only the tab bar above changes the gear type.
+                    physics: NeverScrollableScrollPhysics(),
+                    children: [
+                      // Automatic cars
+                      Center(child: AutomaticTabPage(vehicleType: 1)),
+
+                      // Manual cars
+                      Center(child: AutomaticTabPage(vehicleType: 2)),
+                    ],
+                  ),
+                ),
+                // -------------------------------------------------------
                 // CARD 1 - Pickup and drop addresses. Tapping a row opens a
                 // map picker (see LocationCards / pickupgoogleMap.dart /
                 // dropGoogleMap.dart).
@@ -314,128 +403,34 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                     ),
                   ),
                 ),
+                // Pushes the Next button to the bottom of the screen.
+                Expanded(child: SizedBox()),
                 // -------------------------------------------------------
-                // CARD 2 - "Automatic | Manual" tab bar. Choosing a tab
-                // stores the gear type of the customer's car.
+                // "Next" button - checks the choices, gets the fare from the
+                // server and opens the estimate page, where the ride is
+                // confirmed.
                 // -------------------------------------------------------
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: readyToContinue
-                        ? SizedBox(
-                            height: 60,
-                            width: MediaQuery.of(context).size.width / 1.25,
-                            child: Padding(
-                              padding: const EdgeInsets.all(1.0),
-                              child: AppBar(
-                                backgroundColor: tWhite,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    10,
-                                  ),
-                                ),
-                                bottom: TabBar(
-                                  onTap: (index) async {
-                                    // left tab = Automatic, right = Manual
-                                    if (index == 0) {
-                                      tripOptionsProvider
-                                          .setCarType(CAR_TYPE_AUTOMATIC);
-                                    } else {
-                                      tripOptionsProvider
-                                          .setCarType(CAR_TYPE_MANUAL);
-                                    }
-                                    setState(() {});
-                                  },
-                                  labelColor: tWhite,
-                                  unselectedLabelColor: tPrimaryColor,
-                                  labelPadding: EdgeInsets.all(5),
-                                  indicatorPadding: EdgeInsets.all(4),
-                                  indicator: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: tPrimaryColor,
-                                  ),
-                                  tabs: [
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          left: 10.0, right: 10.0),
-                                      child: Tab(
-                                        child: Text(
-                                          'automatic'.tr,
-                                          style: TextStyle(
-                                            fontSize:
-                                                isTab(context) ? 10.sp : 12.sp,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          left: 20.0, right: 20.0),
-                                      child: Tab(
-                                        child: Text(
-                                          'manual'.tr,
-                                          style: TextStyle(
-                                            fontSize:
-                                                isTab(context) ? 10.sp : 12.sp,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                        : Container(),
+                Center(
+                  child: SizedBox(
+                    width: isTab(context) ? 30.w : 50.w,
+                    height: isTab(context) ? 6.h : 7.h,
+                    child: ButtonWidget(
+                      borderSide: BorderSide(color: tPrimaryColor),
+                      color: tPrimaryColor,
+                      borderRadius: isTab(context) ? 16.0 : 14.0,
+                      child: Text('next'.tr,
+                          style: GoogleFonts.mulish(
+                              color: tWhite,
+                              fontWeight: FontWeight.w700,
+                              fontSize: isTab(context) ? 9.sp : 14.sp)),
+                      onTap: (startLoading, stopLoading, btnState) async {
+                        startLoading();
+                        await _next(tripOptionsProvider, readyToContinue);
+                        stopLoading();
+                      },
+                    ),
                   ),
                 ),
-                // -------------------------------------------------------
-                // CARD 3 - The car types (SUV+, SUV, Sedan, Hatchback) for
-                // the chosen gear type, loaded from the server.
-                // -------------------------------------------------------
-                readyToContinue
-                    ? Container(
-                        height: MediaQuery.of(context).size.height / 5,
-                        child: TabBarView(
-                          children: [
-                            // Automatic cars
-                            Center(child: AutomaticTabPage(vehicleType: 1)),
-
-                            // Manual cars
-                            Center(child: AutomaticTabPage(vehicleType: 2)),
-                          ],
-                        ),
-                      )
-                    : Container(),
-                // -------------------------------------------------------
-                // "Next" button - gets the fare from the server and opens the
-                // estimate page, where the ride is confirmed.
-                // -------------------------------------------------------
-                readyToContinue
-                    ? Center(
-                        child: SizedBox(
-                          width: isTab(context) ? 30.w : 50.w,
-                          height: isTab(context) ? 6.h : 7.h,
-                          child: ButtonWidget(
-                            borderSide: BorderSide(color: tPrimaryColor),
-                            color: tPrimaryColor,
-                            borderRadius: isTab(context) ? 16.0 : 14.0,
-                            child: Text('next'.tr,
-                                style: GoogleFonts.mulish(
-                                    color: tWhite,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: isTab(context) ? 9.sp : 14.sp)),
-                            onTap: (startLoading, stopLoading, btnState) async {
-                              startLoading();
-                              await _next(tripOptionsProvider);
-                              stopLoading();
-                            },
-                          ),
-                        ),
-                      )
-                    : Container(),
                 SizedBox(
                   height: 10,
                 )

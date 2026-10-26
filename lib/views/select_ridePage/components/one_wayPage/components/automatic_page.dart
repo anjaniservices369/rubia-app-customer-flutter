@@ -43,8 +43,20 @@ class _AutomaticTabPageState extends State<AutomaticTabPage> {
 
     if (res != null && res['status'] == 'OK') {
       if (mounted) {
+        // Keep the car already chosen (the screen is rebuilt after the map
+        // pickers); otherwise start on the first car.
+        final provider =
+            Provider.of<TripOptionsProvider>(context, listen: false);
+        final list = res['details'] as List;
+        var selected =
+            list.indexWhere((v) => v['title'] == provider.carModel);
+        if (selected < 0) {
+          selected = 0;
+          if (list.isNotEmpty) provider.setCarModel(list[0]['title']);
+        }
         setState(() {
-          vehicleTypeDetails = res['details'];
+          vehicleTypeDetails = list;
+          rides = selected;
         });
       }
     } else {
@@ -106,10 +118,6 @@ class _AutomaticTabPageState extends State<AutomaticTabPage> {
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
                   var vehicle = vehicleTypeDetails[index];
-                  if (index == 0 && rides == null) {
-                    tripOptionsProvider.setCarModel(vehicle['title']);
-                    rides = 0;
-                  }
                   return GestureDetector(
                     onTap: () {
                       tripOptionsProvider.setCarModel(vehicle['title']);

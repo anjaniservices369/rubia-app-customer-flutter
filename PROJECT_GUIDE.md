@@ -35,18 +35,23 @@ There are **three separate apps / systems** that work together:
 3. **OTP** → the app reads the SMS automatically and signs the customer in.
 4. **Profile (first time)** → name, email, gender, date of birth, emergency contacts.
 5. **Home** → taps **Drivers**.
-6. **Book a driver** (one screen) → one-way or round trip; in-city or out-station; pickup and drop
-   on a map (the app checks the place is inside Rubia's service area); pickup time (next free slot
-   pre-filled); automatic/manual and car type (SUV+, SUV, Sedan, Hatchback); then **Next**.
+6. **Book a driver** (one screen) → one-way or round trip; in-city or out-station; then the
+   **vehicle first**: automatic/manual and car type (SUV+, SUV, Sedan, Hatchback); then pickup and
+   drop on a map (the app checks the place is inside Rubia's service area); pickup time (next free
+   slot pre-filled); then **Next**.
 7. **Estimate and confirm** (one screen) → the server calculates the price (e.g. ₹609 for 2 hours).
    Hours and coupons can be changed; **Confirm Ride** saves the booking: *"Your order has been
    placed"*.
 8. **Waiting for driver** → a driver accepts. The customer sees the driver and a 4-digit **ride OTP**.
 9. **Ride** → the driver arrives, the customer shares the OTP, the ride starts and ends.
-10. **Pay and rate** → pay cash/wallet, then rate the driver (stars and an optional review) on the
-    ride details of the completed ride. After **Submit** the customer sees "Thanks for your
-    rating" and lands on **Home**; Back does not return to the finished ride.
-11. **Cancel** (optional) → the customer can cancel; a cancellation fee may apply.
+10. **Rate the driver, right when the ride ends** → as soon as the ride is completed a
+    **"Ride Completed"** sheet opens on top of whatever screen the customer is on (Home,
+    Bookings, the live ride screen): driver name, stars, optional review, **Submit** or
+    **Later**. **Submit** shows "Thanks for your rating" and opens **Home**; Back does not return
+    to the finished ride. **Later** keeps the rating available on the ride's details in
+    Bookings → Completed, but the customer is not asked again for that ride.
+11. **Pay** → cash or wallet.
+12. **Cancel** (optional) → the customer can cancel; a cancellation fee may apply.
 
 ---
 
@@ -236,6 +241,11 @@ kept out of git through `.git/info/exclude`, so they are never committed by acci
     the warning (see 7.2).
 11. **Emergency contacts are saved without names.** The server stored the two numbers with empty
     names and relationships.
+12. **Slow save can show "Failed to save" although the booking exists.** The app waits 30 seconds
+    for the server (`api_services/ApiHelper.dart`). While the Google APIs of item 9 are denied, the
+    server retries them and one save took 33 seconds, so the app gave up after the booking had
+    already been stored (booking 1012). Enabling those APIs fixes the delay; the real fix is for
+    the server to save first and look up distances afterwards.
 
 ---
 
@@ -265,7 +275,7 @@ tested end to end (booking 1010: book, confirm, driver completes, shown under Co
 | # | Screen | What the customer does | File |
 |---|---|---|---|
 | 1 | **Home** | Taps **Drivers** (the other tiles say "Coming soon") | `homePage/homePage.dart` |
-| 2 | **Book a driver** (one screen) | Chooses One way / Round trip and In-city / Out-station; sees the pickup (from GPS) and taps the drop row (opens the map straight away, or the favourites list if the customer has saved favourites); checks the pickup time (the next free quarter-hour is already filled in, tap to change today/tomorrow and time); chooses Automatic / Manual and the car type; taps **Next**. The server calculates the fare here. | `RideBooking/selectLocationPage.dart` |
+| 2 | **Book a driver** (one screen) | In this order: One way / Round trip and In-city / Out-station; **Automatic / Manual and the car type** (first car is pre-selected); the pickup (from GPS) and the drop row (opens the map straight away, or the favourites list if the customer has saved favourites); the pickup time (the next free quarter-hour is already filled in, tap to change today/tomorrow and time); **Next** (always visible; asks for the missing pickup/drop if needed). The server calculates the fare here. | `RideBooking/selectLocationPage.dart` |
 | 3 | **Estimate and confirm** (one screen) | Sees trip summary and fare, can change the pickup time, hours (1-15), apply a coupon, then taps **Confirm Ride**. The booking is saved and My Bookings (Active Rides) opens. | `homePage/components/OneWay.dart` |
 | 4 | My Bookings, then Ride details | Follows the booking; ride OTP, driver, cancel | `Bookings/` |
 
@@ -307,6 +317,37 @@ Sheets and pop-ups that remain: the map picker (needed to choose a new place), t
   Both rating forms now call `Twl.goHomeAfterRating`: thank-you message, then Home with the screen
   stack cleared. Tested on the phone with booking 1011: rating saved in `user_booking_ratings`,
   "Thanks for your rating" shown, Home opened, and Back left the app instead of reopening the ride.
+- Moving the vehicle choice above the places exposed a reset: choosing the drop on the map
+  rebuilds the booking screen, which dropped the chosen car back to the first one (SUV+) and the
+  gear tab back to Automatic. The car list now re-selects the car already chosen
+  (`select_ridePage/.../automatic_page.dart`) and the tab opens on the chosen gear type. Tested:
+  Manual + Sedan chosen before the drop was saved as Manual, Sedan (booking 1014).
+
+### 10.5 Rating when the ride ends (not from the Completed list)
+
+Rating used to be possible only by opening a finished ride under Bookings → Completed. It is now
+asked for the moment the ride completes (`views/Bookings/components/rateRide.dart`):
+
+- **Anywhere in the app:** `BottomNavigation` (which hosts Home, Bookings and Profile) asks the
+  server every 8 seconds, and again when the app returns to the foreground, whether the booking
+  placed from this phone has completed (`RideRatingPrompt.check`). If it has, and is not yet
+  rated, the "Ride Completed" sheet opens over the current screen.
+- **On the live ride screen** (`riderDetailsPayment.dart`): it already polled every 5 seconds; on
+  completion it now shows the same sheet first, and goes on to the bill only if the customer taps
+  **Later**.
+- Which booking is watched: the phone saves `booking_id` when a booking is confirmed, and also
+  when a booking's live screen is opened. `ride_resolved_id` remembers the booking that was already
+  handled, so one ride is asked about once; cancelled bookings are also marked handled.
+- The rating form inside Completed rides remains for customers who chose **Later**.
+- If the app-wide check has already opened the sheet, the live ride screen waits for it to close
+  before showing the bill (so the bill is never pushed on top of an open sheet).
+- Tested on the phone: (1) customer on Home, ride completed through the driver API: the sheet
+  opened by itself within about 4 seconds, **Submit** saved the rating (booking 1012) and opened
+  Home with "Thanks for your rating"; (2) customer on the live ride screen: the sheet opened within
+  about 3 seconds, **Later** continued to the bill and no second prompt followed (booking 1014).
+- Not done: a push or notification that asks for the rating while the app is closed. The
+  background checker (`periodic_notification.dart`) stops watching once the ride has started and
+  shows no completion message; adding that is a separate change.
 
 ---
 ## Live inventory (generated)
@@ -314,7 +355,7 @@ Sheets and pop-ups that remain: the map picker (needed to choose a new place), t
 <!-- AUTO:inventory:start -->
 _This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
 
-- Source files: **148**
+- Source files: **149**
 - Server endpoints: **50**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**

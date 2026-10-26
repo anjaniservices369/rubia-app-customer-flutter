@@ -18,6 +18,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_curved_line/maps_curved_line.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,6 +32,7 @@ import '../../../api_services/userApi.dart';
 import '../../../globalWidgets/helpandsos.dart';
 
 import 'finalRideDetailsView/finalRideDetailsView.dart';
+import 'rateRide.dart';
 import 'rideDetailsView/components/rideInfo.dart';
 import '../../bottomNavigation.dart/bottomNavigation.dart';
 
@@ -87,14 +89,21 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
             viewbookingDetails['status'] == STATUS_USER_CANCELLED ||
             viewbookingDetails['status'] == STATUS_BOOKING_AUTO_CANCELLED ||
             viewbookingDetails['status'] == STATUS_CANCELLED) {
-
+          // Stop polling first: the rating sheet below can stay open a while.
+          timer!.cancel();
+          _timer.cancel();
+          final finished = viewbookingDetails;
+          if (finished['status'] == STATUS_RIDE_COMPLETED) {
+            // The ride just ended: ask for the rating right away. A rating
+            // opens Home; 'Later' continues to the bill below.
+            await RideRatingPrompt.promptCompleted(context, finished);
+            if (!mounted) return;
+          }
           Twl.navigateTo(
               context,
               FinalRideDetailsView(
-                rideDetails: viewbookingDetails,
+                rideDetails: finished,
               ));
-          timer!.cancel();
-          _timer.cancel();
         }
       } else {
         timer!.cancel();
@@ -149,6 +158,10 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   void initState() {
     viewbookingDetails = {};
+    // Remember this booking, so the rating prompt still appears if the ride
+    // ends while the customer is on another screen (see rateRide.dart).
+    SharedPreferences.getInstance().then(
+        (p) => p.setString('booking_id', widget.bookingDetails['id'].toString()));
     getViewBooking();
 
     // TODO: implement initState
