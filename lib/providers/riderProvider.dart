@@ -67,6 +67,7 @@ class TripOptionsProvider with ChangeNotifier {
   dynamic extraKmCharge = 0.0;
   dynamic extraMinCharge = 0.0;
   dynamic nightCharge = 0.0;
+  dynamic nightChargePerNight = 0;
   dynamic nightCharges = 0;
   dynamic outStationCharge = 0.0;
   dynamic additionalCharges = 0.0;
@@ -455,6 +456,10 @@ class TripOptionsProvider with ChangeNotifier {
     extraKmCharge = calculateEstimate['extraKmCharge'].toString();
     extraMinCharge = calculateEstimate['extraMinCharge'].toString();
     nightCharge = calculateEstimate['nightCharge'].toString();
+    // The rate card's charge for one night (the 'nightCharge' above is only
+    // the amount that applies to this trip, so it is 0 for a daytime trip).
+    nightChargePerNight =
+        (calculateEstimate['nightChargePerNight'] ?? 0).toString();
     outStationCharge = calculateEstimate['outStationCharge'].toString();
     additionalCharges = calculateEstimate['additionalCharges'].toString();
     estimatedDistance = calculateEstimate['estimatedDistance'].toString();

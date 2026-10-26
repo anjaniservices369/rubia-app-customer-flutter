@@ -245,7 +245,8 @@ kept out of git through `.git/info/exclude`, so they are never committed by acci
     for the server (`api_services/ApiHelper.dart`). While the Google APIs of item 9 are denied, the
     server retries them and one save took 33 seconds, so the app gave up after the booking had
     already been stored (booking 1012). Enabling those APIs fixes the delay; the real fix is for
-    the server to save first and look up distances afterwards.
+    the server to save first and look up distances afterwards. The same slowness once left Ride
+    Details on its loading dots for over a minute (it loaded normally on the next try).
 
 ---
 
@@ -277,7 +278,7 @@ tested end to end (booking 1010: book, confirm, driver completes, shown under Co
 | 1 | **Home** | Taps **Drivers** (the other tiles say "Coming soon") | `homePage/homePage.dart` |
 | 2 | **Book a driver** (one screen) | In this order: One way / Round trip and In-city / Out-station; **Automatic / Manual and the car type** (first car is pre-selected); the pickup (from GPS) and the drop row (opens the map straight away, or the favourites list if the customer has saved favourites); the pickup time (the next free quarter-hour is already filled in, tap to change today/tomorrow and time); **Next** (always visible; asks for the missing pickup/drop if needed). The server calculates the fare here. | `RideBooking/selectLocationPage.dart` |
 | 3 | **Estimate and confirm** (one screen) | Sees trip summary and fare, can change the pickup time, hours (1-15), apply a coupon, then taps **Confirm Ride**. The booking is saved and My Bookings (Active Rides) opens. | `homePage/components/OneWay.dart` |
-| 4 | My Bookings, then Ride details | Follows the booking; ride OTP, driver, cancel | `Bookings/` |
+| 4 | My Bookings, then Ride details | Follows the booking; ride OTP, driver, cancel. **My Bookings is no longer a tab of the bottom bar** (which now has only Home and Profile): it opens from the **Bookings** button at the top right of "Book a driver", and automatically after **Confirm Ride** (on top of Home). Back returns to where the customer came from. Tested on the phone: the bar shows Home and Profile only; the button opens the list; after confirming, the list opens with the new ride and Back goes to Home. Code that used the old tab numbers still works: `BottomNavigation(tabIndexId: 1)` now means "Home with My Bookings opened on top", and 2 is Profile. | `Bookings/`, `views/bottomNavigation.dart/` |
 
 Sheets and pop-ups that remain: the map picker (needed to choose a new place), the date/time sheet
 (`dummy.dart`, class `Clock`: OK now only stores the choice and closes), the favourites list
@@ -323,7 +324,39 @@ Sheets and pop-ups that remain: the map picker (needed to choose a new place), t
   (`select_ridePage/.../automatic_page.dart`) and the tab opens on the chosen gear type. Tested:
   Manual + Sedan chosen before the drop was saved as Manual, Sedan (booking 1014).
 
-### 10.5 Rating when the ride ends (not from the Completed list)
+### 10.5 Bill breakup check (estimate and final bill)
+
+Checked against the server's numbers for the same trip (Sedan, in-city, one-way, 2 hours; then a
+ride that completed after a few seconds):
+
+| Where | Lines shown | Server's numbers | Result |
+|---|---|---|---|
+| Estimate (fare breakup sheet) | Base 400, Additional 180, GST 29, coupon -0, **Estimated Final Fare ₹609** | `get-estimate`: base 400 + additional 180 + GST 29 = 609 | Matches |
+| Final bill (ride details) | Sub total ₹420, Discount -₹0, **Total ₹420** | `subtotal` 420, `price_detail.estimatePrice` 420 (base 400 + GST 20) | Matches |
+| Final bill, detailed sheet (tap the Total Price box with the (i) icon) | Base Fare ₹400, GST ₹20, **Completed Ride Fare ₹420**, footnotes incl. "Night Charge ₹200" | `price_detail`: baseFare 400 + gst 20 = 420 | Matches (checked on the phone) |
+| Completed card in the list | ₹420 | same | Matches |
+
+What the numbers mean (so the difference between ₹609, ₹420 and ₹360 is not a bug):
+- **Estimate ₹609** is the fare quoted for the 2 hours the customer asked for. The final bill is
+  recalculated from the real time and distance, so a ride that lasted seconds is billed the base
+  fare only (₹420); a normal ride ends close to its estimate.
+- **"Sub total"** on the bill already includes GST (it is the full fare before any coupon).
+- **`booking.final_price` (360) is the driver's share**, not the customer's bill: fare minus the
+  Rubia commission, GST and fees (`DriverController::actionCompleteRide`). The customer's bill is
+  `subtotal`. The column name is misleading; the app correctly does not show it.
+- `booking.additional_charges` keeps the value quoted at booking time (180) even after the final
+  bill replaced it in `price_detail` (0); the app reads `price_detail`.
+
+Found and fixed: the estimate sheet's footnote said "Night Charge ₹300", a figure hard-coded in
+the app, while the server's rate card says ₹200 per night. The app now keeps the server's
+`nightChargePerNight` (`TripOptionsProvider.nightChargePerNight`) and quotes that, falling back to
+the old figures only when the server sends none. Checked on the phone: the footnote now reads
+₹200.
+
+Cosmetic, not changed: a ride that lasted seconds shows "Fare for your 0 mins Trip" and "0 mins
+usage"; real rides show their real duration.
+
+### 10.6 Rating when the ride ends (not from the Completed list)
 
 Rating used to be possible only by opening a finished ride under Bookings → Completed. It is now
 asked for the moment the ride completes (`views/Bookings/components/rateRide.dart`):

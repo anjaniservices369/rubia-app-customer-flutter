@@ -44,10 +44,21 @@ class _BottomNavigationState extends State<BottomNavigation>
   Timer? _rideTimer;
 
   // >>> START: checkBottomIndex - checks bottom index
+  /// `tabIndexId` keeps its old meaning for the many callers: 0 = Home,
+  /// 1 = My Bookings, 2 = Profile. My Bookings is no longer a tab: it opens on
+  /// top of Home (the bottom bar only has Home and Profile).
   void checkBottomIndex() {
     setState(() {
-      tabIndexs = widget.tabIndexId != null ? widget.tabIndexId : 0;
+      tabIndexs = widget.tabIndexId == 2 ? 1 : 0;
     });
+    if (widget.tabIndexId == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (_) => BookingPageView()));
+        }
+      });
+    }
   }
   // <<< END: checkBottomIndex - checks bottom index
 
@@ -125,15 +136,6 @@ class _BottomNavigationState extends State<BottomNavigation>
       Images.HOME,
       width: isTab(context) ? 35 : 22,
     );
-    Image nearby(int index) => tabIndexs == index
-        ? Image.asset(
-      Images.SELECT_BOOKINGS,
-      width: isTab(context) ? 38 : 25,
-    )
-        : Image.asset(
-      Images.BOOKINGS,
-      width: isTab(context) ? 38 : 25,
-    );
     Image profile(int index) => tabIndexs == index
         ? Image.asset(
       Images.SELECT_PROFILE,
@@ -147,15 +149,7 @@ class _BottomNavigationState extends State<BottomNavigation>
       child: WillPopScope(
         onWillPop: () => tabIndexs == 0
             ? Twl.willpopAlert(context)
-            : tabIndexs == 1
-            ? Twl.forceNavigateTo(context, BottomNavigation(tabIndexId: 0))
-            : tabIndexs == 2
-            ? Twl.forceNavigateTo(
-            context, BottomNavigation(tabIndexId: 0))
-            // : tabIndexs == 3
-            // ? Twl.forceNavigateTo(
-            // context, BottomNavigation(tabIndexId: 0))
-            : null,
+            : Twl.forceNavigateTo(context, BottomNavigation(tabIndexId: 0)),
         child: Scaffold(
           body: Stack(
             children: [
@@ -164,10 +158,7 @@ class _BottomNavigationState extends State<BottomNavigation>
                 index: tabIndexs,
                 children: [
                   HomePage(),
-                  BookingPageView(),
-                  // WalletPage(selectedType: widget.selectedType),
                   ProfilePageView(),
-                  // Darwer(),
                 ],
               ),
             ],
@@ -189,16 +180,7 @@ class _BottomNavigationState extends State<BottomNavigation>
                 label: 'home'.tr,
               ),
               _bottomNavigationBarItem(
-                icon: nearby(1),
-                // icon: Icon(Icons.history_sharp),
-                label: 'bookings'.tr,
-              ),
-              // _bottomNavigationBarItem(
-              //   icon: orders(2),
-              //   label: 'wallet'.tr,
-              // ),
-              _bottomNavigationBarItem(
-                icon: profile(2),
+                icon: profile(1),
                 label: 'profile'.tr,
               ),
             ],

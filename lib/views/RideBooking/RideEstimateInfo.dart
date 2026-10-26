@@ -49,6 +49,15 @@ class RentalVehicleInfoState extends State<RentalVehicleInfo> {
   // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: getCharges - gets charges
+  /// The night charge to quote: the rate card's charge per night when the
+  /// server sent it, else the trip's night charge, else a default.
+  int _nightQuote(TripOptionsProvider p, int fallback) {
+    final perNight = int.tryParse(p.nightChargePerNight.toString()) ?? 0;
+    if (perNight > 0) return perNight;
+    final night = int.tryParse(p.nightCharge.toString()) ?? 0;
+    return night > 0 ? night : fallback;
+  }
+
   void getCharges() {
     final tripOptionsProvider =
     Provider.of<TripOptionsProvider>(context, listen: false);
@@ -59,22 +68,22 @@ class RentalVehicleInfoState extends State<RentalVehicleInfo> {
     if(tripOptionsProvider.tripType == TRIP_TYPE_INTERCITY && tripOptionsProvider.riderType == RIDER_TYPE_ROUNDTRIP){
       setState(() {
         extraMin = int.parse(tripOptionsProvider.extraMinCharge);
-        nightCharges = int.parse(tripOptionsProvider.nightCharge)>0 ? int.parse(tripOptionsProvider.nightCharge) : 300;
+        nightCharges = _nightQuote(tripOptionsProvider, 300);
       });
     }else if(tripOptionsProvider.tripType == TRIP_TYPE_INTERCITY && tripOptionsProvider.riderType == RIDER_TYPE_ONEWAY){
       setState(() {
         extraMin = int.parse(tripOptionsProvider.extraMinCharge);
-        nightCharges = int.parse(tripOptionsProvider.nightCharge)>0 ? int.parse(tripOptionsProvider.nightCharge) : 300;
+        nightCharges = _nightQuote(tripOptionsProvider, 300);
       });
     }else if(tripOptionsProvider.tripType == TRIP_TYPE_OUTSTATION && tripOptionsProvider.riderType == RIDER_TYPE_ROUNDTRIP){
       setState(() {
         extraMin = int.parse(tripOptionsProvider.extraMinCharge);
-        nightCharges = int.parse(tripOptionsProvider.nightCharge)>0 ? int.parse(tripOptionsProvider.nightCharge) : 500;
+        nightCharges = _nightQuote(tripOptionsProvider, 500);
       });
     }else if(tripOptionsProvider.tripType == TRIP_TYPE_OUTSTATION && tripOptionsProvider.riderType == RIDER_TYPE_ONEWAY){
       setState(() {
         extraMin = int.parse(tripOptionsProvider.extraMinCharge);
-        nightCharges = int.parse(tripOptionsProvider.nightCharge)>0 ? int.parse(tripOptionsProvider.nightCharge) : 300;
+        nightCharges = _nightQuote(tripOptionsProvider, 300);
       });
     }
   }

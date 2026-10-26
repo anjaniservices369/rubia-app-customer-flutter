@@ -6,6 +6,7 @@
 //        "Select ride type" screen and the separate date/time step.
 // =============================================================================
 import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
+import 'package:base_project_flutter/views/Bookings/bookingPageView.dart';
 import 'package:base_project_flutter/views/homePage/components/OneWay.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -196,7 +197,21 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                 style: GoogleFonts.mulish(
                     color: tDarkNavyblue,
                     fontWeight: FontWeight.w800,
-                    fontSize: isTab(context) ? 10.sp : 17.sp))),
+                    fontSize: isTab(context) ? 10.sp : 17.sp)),
+            // My Bookings lives here, inside the driver booking (it is no
+            // longer a tab of the bottom bar).
+            actions: [
+              TextButton.icon(
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => BookingPageView())),
+                icon: Icon(Icons.receipt_long, color: tPrimaryColor, size: 20),
+                label: Text('bookings'.tr,
+                    style: TextStyle(
+                        color: tPrimaryColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: isTab(context) ? 9.sp : 12.sp)),
+              ),
+            ]),
         // ---- Body: map in the background, cards stacked at the bottom ----
         body: Stack(
           children: [

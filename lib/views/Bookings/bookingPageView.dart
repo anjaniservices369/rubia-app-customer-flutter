@@ -135,7 +135,8 @@ class _BookingPageViewState extends State<BookingPageView> {
     return Scaffold(
       backgroundColor: tBackground,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        // Opened from the Drivers booking screen (or after a booking): back arrow.
+        automaticallyImplyLeading: true,
         elevation: 0,
         titleSpacing: 7,
         title: Padding(
