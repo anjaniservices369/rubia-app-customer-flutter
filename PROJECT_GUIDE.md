@@ -176,6 +176,14 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
 1. **Database:** the backend expects MySQL on `127.0.0.1:3308`. Start a `mysql:8.4` Docker
    container on that port (empty root password) and import the dumps from
    `../rubia-data-sql-dumps` (`rubia_website.sql` first, then the others).
+   **Names:** the dumps contain real people's names. In the local container (not in the dump
+   files) every personal name was removed on 26 Oct 2026: `user.first_name` / `last_name`,
+   emergency-contact names, bank account-holder names and the `narsing` names are empty, except
+   the two test accounts, which are both named **Veera** (customer 9999900001, driver 9985735241).
+   The original values are kept in the container's `bak_user_names`,
+   `bak_user_emergency_contacts`, `bak_driver_emergency_contacts`, `bak_emergency_contact`,
+   `bak_driver_bank_details` and `bak_narsing_names` tables. A freshly imported database has the
+   real names again, so repeat the clean-up after importing.
 2. **Backend:** from `../rubia-backend-php/app` run `php -S 127.0.0.1:8080 -t . index.php` with
    these environment variables and options (nothing in the code is changed):
    - `YII_ENV=dev`, `YII_DEBUG=0`
