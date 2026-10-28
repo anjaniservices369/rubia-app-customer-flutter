@@ -333,7 +333,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
                     dot: Colors.red,
                     label: 'Drop',
                     place: _drop,
-                    empty: 'Search destination on the map',
+                    empty: 'Choose your destination',
                     onTap: () => _choose(pickup: false)),
                 if (_message != null)
                   Padding(

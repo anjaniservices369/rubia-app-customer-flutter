@@ -80,6 +80,8 @@ class _TaxiPlacePickerState extends State<TaxiPlacePicker> {
   late LatLng _center = widget.start;
   TaxiPlace? _place;
   bool _loading = true;
+  final TextEditingController _search = TextEditingController();
+  String? _searchError;
 
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
@@ -102,6 +104,34 @@ class _TaxiPlacePickerState extends State<TaxiPlacePicker> {
     });
   }
   // <<< END: _lookup - finds the address of the pinned spot
+
+  // >>> START: _searchAddress - moves the map to the address typed in the search box (the phone's geocoder, no key)
+  Future<void> _searchAddress() async {
+    final q = _search.text.trim();
+    FocusScope.of(context).unfocus();
+    if (q.length < 3) return;
+    try {
+      final found = await locationFromAddress(q);
+      if (!mounted) return;
+      if (found.isEmpty) {
+        setState(() => _searchError = 'No place found for "$q"');
+        return;
+      }
+      setState(() => _searchError = null);
+      _map?.animateCamera(CameraUpdate.newLatLng(LatLng(found.first.latitude, found.first.longitude)));
+    } catch (_) {
+      if (mounted) setState(() => _searchError = 'No place found for "$q"');
+    }
+  }
+  // <<< END: _searchAddress - moves the map to the address typed in the search box
+
+  // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+  // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
 
   // >>> START: _goToMe - moves the map to the phone's position
   Future<void> _goToMe() async {
@@ -139,12 +169,39 @@ class _TaxiPlacePickerState extends State<TaxiPlacePicker> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: IconButton(
-                  icon: Icon(Icons.arrow_back, color: tDarkNavyblue),
-                  onPressed: () => Navigator.pop(context),
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back, color: tDarkNavyblue),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Material(
+                      elevation: 3,
+                      borderRadius: BorderRadius.circular(24),
+                      child: TextField(
+                        controller: _search,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (_) => _searchAddress(),
+                        style: TextStyle(color: tDarkNavyblue, fontWeight: FontWeight.w600),
+                        decoration: InputDecoration(
+                          hintText: 'Search a place or address',
+                          errorText: _searchError,
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                          suffixIcon: IconButton(icon: Icon(Icons.search, color: tPrimaryColor), onPressed: _searchAddress),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
