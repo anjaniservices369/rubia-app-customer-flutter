@@ -245,6 +245,19 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
 
 Two full runs completed this way (bookings 1008 and 1009, estimate ₹609, final price ₹360).
 
+### 7.2a Run of 28 Oct 2026 (customer + Partner app on two phones)
+- A new customer (9999900003) registered on the phone through the app. The Partner app (driver 9999900021,
+  also new) was registered on a second phone; their booking, acceptance, OTP, ride, cash collection and both
+  compulsory ratings all worked (booking 1062: estimate Rs 819, final Rs 630, driver earning Rs 540).
+- The dev backend must also list the extra test numbers in `OTP_TEST_NUMBERS` and have the
+  `driver_subscription` row and driver flags described in the Partner app's `docs/DEVELOPER_GUIDE.md`.
+- After a ride completes the customer sees a compulsory *Rate your driver* sheet (stars and a review);
+  a new booking is refused with "You already have a ride in progress" while any earlier booking of that
+  customer is still waiting, accepted, on the way, arrived or started (here an old booking left in the
+  started state blocked test customer 9999900002 until it was completed).
+- `adb shell pm clear`/`pm grant` are refused on some phones; reinstall the APK to reset the app.
+- Git Bash rewrites `/sdcard/...` paths for `adb push`; set `MSYS_NO_PATHCONV=1`.
+
 ### 7.3 Copilot agent for this project
 
 `.github/agents/rubia-customer-app.agent.md` defines the **Rubia Customer App** agent. It knows
