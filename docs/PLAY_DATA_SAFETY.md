@@ -21,6 +21,7 @@ Fill every question; "Incomplete data safety declaration" disappears when the fo
 |---|---|---|---|---|---|
 | Personal info | Name | Yes | No | Required | App functionality, Account management |
 | Personal info | Email address | Yes | No | Required | App functionality, Account management, Communications |
+| Personal info | Address (saved favourite addresses) | Yes | No | Optional | App functionality |
 | Personal info | Phone number | Yes | No | Required | App functionality, Account management, Fraud prevention and security |
 | Personal info | User IDs | Yes | No | Required | App functionality, Account management |
 | Personal info | Other info (date of birth, gender) | Yes | No | **Optional** | Account management |
@@ -39,3 +40,48 @@ Not collected: messages, audio, files, calendar, health, web browsing, installed
 - The manifest no longer contains READ_CONTACTS, WRITE_CONTACTS or GET_ACCOUNTS. Upload the new build, or Play will still read them from the old one and ask for a permissions declaration.
 - The Privacy Policy text must say the same as this table (and mention account deletion). Edit it in the admin dashboard (Pages).
 - If you later add Google Analytics, Firebase, ads or a payment SDK that reads card data, update this form.
+
+## 4. Step 3 "Data types" - every box on the Play Console screen
+
+Same order as the screen. Yes = tick the box, No = leave it empty. Nothing is left to guess.
+
+| Category | Box | Tick? | Note |
+|---|---|---|---|
+| Location | Approximate location | **Yes** | required |
+|  | Precise location | **Yes** | only while the app is in use |
+| Personal info | Name | **Yes** |  |
+|  | Email address | **Yes** |  |
+|  | User IDs | **Yes** |  |
+|  | Address | **Yes** | saved favourite addresses |
+|  | Phone number | **Yes** | login OTP and emergency contacts' numbers typed in by the user |
+|  | Race and ethnicity | **No** |  |
+|  | Political or religious beliefs | **No** |  |
+|  | Sexual orientation | **No** |  |
+|  | Other info | **Yes** | date of birth and gender (optional) |
+| Financial info | User payment info | **No** |  |
+|  | Purchase history | **Yes** | booking amounts and payment status; no card or bank numbers are collected, so User payment info stays empty |
+|  | Credit score | **No** |  |
+|  | Other financial info | **No** |  |
+| Health and fitness | Health info | **No** |  |
+|  | Fitness info | **No** |  |
+| Messages | Emails | **No** |  |
+|  | SMS or MMS | **No** |  |
+|  | Other in-app messages | **No** |  |
+| Photos and videos | Photos | **Yes** | optional profile photo |
+|  | Videos | **No** |  |
+| Audio files | Voice or sound recordings | **No** |  |
+|  | Music files | **No** |  |
+|  | Other audio files | **No** |  |
+| Files and docs | Files and docs | **No** |  |
+| Calendar | Calendar events | **No** |  |
+| Contacts | Contacts | **No** | the address book is not read (customer: permission removed from the manifest; driver: emergency contacts are typed in) |
+| App activity | App interactions | **Yes** |  |
+|  | In-app search history | **No** |  |
+|  | Installed apps | **No** |  |
+|  | Other user-generated content | **Yes** | ratings and reviews |
+|  | Other actions | **No** |  |
+| Web browsing | Web browsing history | **No** |  |
+| App info and performance | Crash logs | **Yes** | Sentry; tick only if the production build sets SENTRY_DSN |
+|  | Diagnostics | **Yes** | Sentry; same condition |
+|  | Other app performance data | **No** |  |
+| Device or other IDs | Device or other IDs | **Yes** | OneSignal push id |

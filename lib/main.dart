@@ -245,7 +245,7 @@ class _MyAppState extends State<MyApp> {
                 // cropped wordmark, so it is given a fixed width; at the old size of 400 it was wider than the screen and off-centre.)
                 splash: Center(
                   child: SizedBox(
-                    width: 260,
+                    width: 145, // the same size as the logo of the Android 12 system splash, so the two look like one screen
                     child: Image.asset(
                       Images.LOGO,
                       fit: BoxFit.contain,
@@ -263,7 +263,7 @@ class _MyAppState extends State<MyApp> {
                             : BottomNavigation(
                                 tabIndexId: 0,
                               ),
-                splashTransition: SplashTransition.scaleTransition,
+                splashTransition: SplashTransition.fadeTransition,
                 backgroundColor: Colors.white),
           ),
         );

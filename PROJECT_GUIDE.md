@@ -812,6 +812,8 @@ customers booking at the same moment; the same booking accepted twice at once (o
 - **Open:** a working map key (Ola Maps key, or a Google key with Routes and Geocoding enabled) must be set in the dashboard Integrations, or one-way estimates cannot be calculated.
 
 
+- **Splash (28 Oct 2026):** only the logo on white. Android 12 and later ignore `launch_background.xml` and showed the app-icon square; `flutter_native_splash.yaml` now sets `android_12` to `assets/images/android12splash.png` (the logo padded to fit the system circle) on white, and the in-app splash uses the same logo size (145) with a fade, so the two look like one screen. Regenerate with `dart run flutter_native_splash:create`.
+
 ### 16.1 Screen-by-screen check (28 Oct 2026, realme phone, test customer 9999900002)
 Checked: Home, Profile and every item under it (My Transactions, Notifications, Favorite Location, Emergency Contact, Refer & Earn, Support, Edit Profile, legal pages, Delete account dialog), Taxi service list, Taxi drop picker and estimate. Fixed:
 - After Edit Profile -> Update the app opened a bare Profile page with no bottom bar; it now returns to the Profile tab (and shows the server's message if the update is refused instead of doing nothing).
