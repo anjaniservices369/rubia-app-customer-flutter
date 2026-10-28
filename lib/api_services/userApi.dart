@@ -212,6 +212,13 @@ class UserAPI {
   }
   // <<< END: updateProfilePic - saves the link of the new profile photo
 
+  // >>> START: deleteAccount - deletes the account and its personal data on the server (Google Play account deletion)
+  deleteAccount(BuildContext context) async {
+    var headers = await ApiHelper().getHeader(context);
+    return await ApiHelper().getTypePost(context, DELETE_ACCOUNT + headers['auth_code'], {'reason': 'in-app'});
+  }
+  // <<< END: deleteAccount - deletes the account and its personal data on the server
+
   //LogOut
   // >>> START: getlogout - logs out on the server and clears everything saved on the phone
   getlogout(BuildContext context) async {
@@ -506,7 +513,7 @@ class UserAPI {
 
   // >>> START: fetchBookingsList - loads My Bookings (active, completed, cancelled)
   fetchBookingsList(BuildContext context, String page, String status,
-      String vehicle_id) async {
+      String vehicle_id, {bool quiet = false}) async {
     var headers = await ApiHelper().getHeader(context);
     var url = BOOKINGS_LIST +
         headers['auth_code'] +
@@ -518,7 +525,7 @@ class UserAPI {
         vehicle_id;
     Map<String, String> params = {};
 
-    var response = await ApiHelper().getTypePost(context, url, params);
+    var response = await ApiHelper().getTypePost(context, url, params, quiet: quiet);
     return response;
   }
   // <<< END: fetchBookingsList - loads My Bookings (active, completed, cancelled)
@@ -526,13 +533,14 @@ class UserAPI {
   // >>> START: rideInfo - gets the details of a booking
   rideInfo(
     BuildContext context,
-    String bookingId,
-  ) async {
+    String bookingId, {
+    bool quiet = false,
+  }) async {
     var headers = await ApiHelper().getHeader(context);
     var url = RIDE_INFO + headers['auth_code'];
     Map<String, String> params = {'booking_id': bookingId};
 
-    var response = await ApiHelper().getTypePost(context, url, params);
+    var response = await ApiHelper().getTypePost(context, url, params, quiet: quiet);
     return response;
   }
   // <<< END: rideInfo - gets the details of a booking
@@ -540,13 +548,14 @@ class UserAPI {
   // >>> START: viewBooking - gets the full details and live status of one booking
   viewBooking(
     BuildContext context,
-    String bookingId,
-  ) async {
+    String bookingId, {
+    bool quiet = false,
+  }) async {
     var headers = await ApiHelper().getHeader(context);
     var url = VIEW_BOOKING + headers['auth_code'];
     Map<String, String> params = {'booking_id': bookingId};
 
-    var response = await ApiHelper().getTypePost(context, url, params);
+    var response = await ApiHelper().getTypePost(context, url, params, quiet: quiet);
     return response;
   }
   // <<< END: viewBooking - gets the full details and live status of one booking

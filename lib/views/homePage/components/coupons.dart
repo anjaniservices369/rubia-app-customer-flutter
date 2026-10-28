@@ -199,8 +199,47 @@ class _CouponsPageState extends State<CouponsPage> {
                                   fontWeight: FontWeight.w700,
                                   fontSize: isTab(context) ? 9.sp : 12.sp),
                             ),
+                            // A typed code is looked up in the available coupons and applied the same way as tapping one in the list
+                            // (this button used to do nothing).
                             onTap:
-                                (startLoading, stopLoading, btnState) async {},
+                                (startLoading, stopLoading, btnState) async {
+                              startLoading();
+                              final typed = _couponCodeController.text.trim().toLowerCase();
+                              if (typed.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Please enter a coupon code')));
+                                stopLoading();
+                                return;
+                              }
+                              dynamic match;
+                              for (final c in couponsData) {
+                                if (c is Map &&
+                                    ((c['code'] ?? '').toString().toLowerCase() == typed ||
+                                        (c['name'] ?? '').toString().toLowerCase() == typed)) {
+                                  match = c;
+                                  break;
+                                }
+                              }
+                              if (match == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                    content: Text('This coupon code is not valid for this ride.')));
+                                stopLoading();
+                                return;
+                              }
+                              final applied = await tripOptionsProvider.applyCoupon(context, {
+                                'coupon_id': match['id'].toString(),
+                                'estimate_price': tripOptionsProvider.estimateFare.toString(),
+                              });
+                              if (!mounted) return;
+                              if (applied) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('coupon_applied_successfully'.tr)));
+                                widget.boolcouponpage != true
+                                    ? Twl.forceNavigateTo(context, OneWay())
+                                    : Twl.forceNavigateTo(context, SearchLocation());
+                              }
+                              stopLoading();
+                            },
                             borderSide: BorderSide(
                               color: tYellow,
                             ),
@@ -231,6 +270,18 @@ class _CouponsPageState extends State<CouponsPage> {
                       if (isLoading) {
                         return Center(
                           child: CircularProgressIndicator(),
+                        );
+                      } else if (couponsData.isEmpty) {
+                        // nothing to show: say so instead of leaving the heading above an empty page
+                        return Padding(
+                          padding: EdgeInsets.only(top: 6.h),
+                          child: Center(
+                            child: Text(
+                              'No coupons are available right now.',
+                              style: TextStyle(
+                                  color: tGray, fontSize: 14, fontWeight: FontWeight.w600),
+                            ),
+                          ),
                         );
                       } else {
                         return SizedBox.shrink();

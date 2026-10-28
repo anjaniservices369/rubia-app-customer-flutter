@@ -77,43 +77,32 @@ class RideCardWidget extends StatelessWidget {
                   Twl.dateActualFormate(rideDetails['pickup_date']).toString() +
                       ', ' +
                       rideDetails['pickup_time'].toString(),
-                  // '20th Dec 2022,'+'09:30 AM',
-                  // rideDetails['id'].toString(),
                   style: GoogleFonts.mulish(
-                    color: tDarkOrangeColor,
+                    color: tDarkNavyblue,
                     fontSize: isTab(context) ? 8.sp : 14.sp,
-                    fontWeight: FontWeight.w600,
-                    // fontFamily:
+                    fontWeight: FontWeight.w700,
                   ),
                 )),
                 SizedBox(
                   height: 1.h,
                 ),
+                // the two trip labels as small pills (in-city / outstation, one way / round trip), the same size and weight
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      getTripTypeText(rideDetails['trip_type']),
-                      style: GoogleFonts.mulish(
-                        color: tDarkOrangeColor,
-                        fontSize: isTab(context) ? 8.sp : 14.sp,
-                        fontWeight: FontWeight.w600,
-                        // fontFamily:
+                    for (final label in [getTripTypeText(rideDetails['trip_type']), getRiderTypeText(rideDetails['rider_type'])])
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(color: tPrimaryColor.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                        child: Text(
+                          label,
+                          style: GoogleFonts.mulish(
+                            color: tDarkOrangeColor,
+                            fontSize: isTab(context) ? 8.sp : 12.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      getRiderTypeText(rideDetails['rider_type']),
-                      style: GoogleFonts.mulish(
-                        color: tDarkNavyblue,
-                        fontSize: isTab(context) ? 8.sp : 14.sp,
-                        fontWeight: FontWeight.w600,
-                        // fontFamily:
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                   ],
                 ),
               ],

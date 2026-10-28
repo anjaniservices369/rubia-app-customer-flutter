@@ -233,6 +233,7 @@ class TaxiApi {
     await prefs.setString(_activeKey, '$serviceKey:$rideId');
   }
 
+  // >>> START: active - active
   /// The saved ride as {service, id}, or null.
   static Future<Map<String, String>?> active() async {
     final prefs = await SharedPreferences.getInstance();
@@ -241,11 +242,14 @@ class TaxiApi {
     final i = v.indexOf(':');
     return {'service': v.substring(0, i), 'id': v.substring(i + 1)};
   }
+  // <<< END: active - active
 
+  // >>> START: clearActive - clears active
   static Future<void> clearActive() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_activeKey);
   }
+  // <<< END: clearActive - clears active
   // <<< END: saveActive / active / clearActive - the ride in progress, kept on the phone
 }
 // <<< END: TaxiApi - requests of the taxi flow

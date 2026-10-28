@@ -175,11 +175,14 @@ class Twl {
   // <<< END: willpopAlert - asks "are you sure?" before leaving a screen
 
   // >>> START: navigateTo - opens another screen on top of the current one
-  static navigateTo(BuildContext context, page) async {
+  /// Answers false ("handled") so a screen can use it as `onWillPop: () => Twl.navigateTo(...)`: with no answer the system treated Back as
+  /// "go ahead and close" and removed the screen that had just been opened, so the phone's Back key could close the app.
+  static Future<bool> navigateTo(BuildContext context, page) async {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => page),
     );
+    return false;
   }
   // <<< END: navigateTo - opens another screen on top of the current one
 
@@ -248,11 +251,25 @@ class Twl {
   // <<< END: errorHandler - shows a message for an HTTP error such as 404 or 500
 
   // >>> START: forceNavigateTo - opens a screen and removes the ones behind it
-  static forceNavigateTo(BuildContext context, page) async {
+  /// Answers false ("handled"), like navigateTo, so `onWillPop: () => Twl.forceNavigateTo(...)` does not close the new screen as well.
+  static Future<bool> forceNavigateTo(BuildContext context, page) async {
     Navigator.pushReplacement(context,
         new MaterialPageRoute(builder: (BuildContext context) => page));
+    return false;
   }
   // <<< END: forceNavigateTo - opens a screen and removes the ones behind it
+
+  // >>> START: backToTab - the phone's Back key: opens a tab of the bottom bar and says "handled"
+  /// For `WillPopScope(onWillPop: () => Twl.backToTab(context, 2))`. The old screens returned the result of forceNavigateTo
+  /// (nothing), which let the system close one more screen after the new one was opened, so Back could leave the app.
+  /// Opens the tab (0 Home, 1 My Bookings, 2 Profile) with nothing left behind it and answers false (Back is handled).
+  static Future<bool> backToTab(BuildContext context, int tabIndexId) async {
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => BottomNavigation(tabIndexId: tabIndexId)),
+        (route) => false);
+    return false;
+  }
+  // <<< END: backToTab - the phone's Back key: opens a tab of the bottom bar and says "handled"
 
   // >>> START: goHomeAfterRating - thanks the customer and returns to Home
   /// Called after a rating has been saved: shows a thank-you message and opens
@@ -455,14 +472,14 @@ class Twl {
                         ],
                       ),
                       Text(
-                        "You have low Wallet balance please",
+                        "Your wallet balance is low.",
                         style: TextStyle(
                             fontWeight: FontWeight.w400,
                             color: tSecondaryColor,
                             fontSize: isTab(context) ? 10.sp : 12.sp),
                       ),
                       Text(
-                        "recharge immediately to enjoy the rides",
+                        "Add money to your wallet to continue.",
                         style: TextStyle(
                             fontWeight: FontWeight.w400,
                             color: tSecondaryColor,
@@ -812,7 +829,9 @@ class Twl {
  * place-picker plugin can occasionally return one, a stale response for a different query winning an async race)
  * instead of trusting it and sending bogus coordinates to check-boundary.
  */
+// >>> START: isWithinIndia - tells whether within india
 bool isWithinIndia(double lat, double lng) {
   return lat >= 6.0 && lat <= 37.5 && lng >= 68.0 && lng <= 97.5;
 }
+// <<< END: isWithinIndia - tells whether within india
 // <<< END: isWithinIndia

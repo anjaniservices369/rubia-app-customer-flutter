@@ -7,6 +7,7 @@ import 'package:base_project_flutter/constants/imageConstant.dart';
 import 'package:base_project_flutter/responsive.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
+import 'package:base_project_flutter/globalWidgets/viewDetailsButton.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 
@@ -129,16 +130,7 @@ class _BookingCardState extends State<BookingCard> {
                   ],
                 ),
               ),
-              Center(
-                child: Text(
-                  'click here to view full details ---->>',
-                  style: GoogleFonts.mulish(
-                    color: tPrimaryColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: isTab(context) ? 9.sp : 11.sp,
-                  ),
-                ),
-              ),
+              const ViewDetailsButton(),
             ],
           ),
         ),

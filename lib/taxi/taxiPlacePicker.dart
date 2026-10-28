@@ -74,17 +74,20 @@ class TaxiPlacePicker extends StatefulWidget {
   State<TaxiPlacePicker> createState() => _TaxiPlacePickerState();
 }
 
+// >>> START: _TaxiPlacePickerState - the data and logic behind its screen
 class _TaxiPlacePickerState extends State<TaxiPlacePicker> {
   GoogleMapController? _map;
   late LatLng _center = widget.start;
   TaxiPlace? _place;
   bool _loading = true;
 
+  // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     super.initState();
     _lookup();
   }
+  // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: _lookup - finds the address of the pinned spot
   Future<void> _lookup() async {
@@ -108,6 +111,7 @@ class _TaxiPlacePickerState extends State<TaxiPlacePicker> {
   }
   // <<< END: _goToMe - moves the map to the phone's position
 
+  // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
     final pinColor = widget.pickup ? Colors.green : Colors.red;
@@ -220,5 +224,7 @@ class _TaxiPlacePickerState extends State<TaxiPlacePicker> {
       ),
     );
   }
+  // <<< END: build - draws this screen/widget on the display
 }
+// <<< END: _TaxiPlacePickerState - the data and logic behind its screen
 // <<< END: TaxiPlacePicker - choose a place by moving the map under a pin

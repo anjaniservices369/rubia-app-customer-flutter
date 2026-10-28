@@ -10,6 +10,7 @@ import 'package:base_project_flutter/globalWidgets/googleMapScreen.dart';
 import 'package:base_project_flutter/taxiservices/searchlocation/searchlocation.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_place_picker_mb/google_maps_place_picker.dart';
@@ -46,7 +47,10 @@ class _PickupAddressGoogleMapPageState extends State<PickupAddressGoogleMapPage>
   @override
   Widget build(BuildContext context) {
     final tripOptionsProvider = Provider.of<TripOptionsProvider>(context);
-    return Scaffold(
+    // A full-screen light map: dark status bar icons, so the clock and battery can be read (they were white on the map).
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
       body: Center(
           child: PlacePicker(
         apiKey: mapKey,
@@ -175,7 +179,7 @@ class _PickupAddressGoogleMapPageState extends State<PickupAddressGoogleMapPage>
         },
         region: 'in',
       )),
-    );
+    ));
   }
   // <<< END: build - draws this screen/widget on the display
 }

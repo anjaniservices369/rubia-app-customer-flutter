@@ -37,16 +37,44 @@ class RentalVehicleInfoState extends State<RentalVehicleInfo> {
     // TODO: implement initState
     super.initState();
     getCharges();
+    final tp = Provider.of<TripOptionsProvider>(context, listen: false);
     texts = [
-      'If the trip extends time,extra charges as $currencySymbol $extraMin per extra min applicable.',
-      'Night Charge $currencySymbol $nightCharges on drives ending between 10:00PM & 05:59AM.',
-      'Final Fare will be Charged on time basis.',
-      'According to our Cancellation Policy,Charge of  $currencySymbol $cancellationCharge on Cancellation.',
-      'Maximum driver\'s duty can be 12 hours.'
+      if (tp.isLongTrip) ...[
+        // An outstation round trip: the base fare covers the first base hours, then it is charged by the hour.
+        'Base fare covers the first ${tp.baseHour} hours. After that, $currencySymbol ${tp.extraHourRate} per hour.',
+        'A longer trip is charged hourly at the same rate.',
+        'Night Charge $currencySymbol $nightCharges is added for every night of the trip (10:00PM to 6:00AM).',
+        "The customer provides the driver's food and accommodation during the trip. They are not included in the fare.",
+      ] else ...[
+        'If the trip extends time,extra charges as $currencySymbol $extraMin per extra min applicable.',
+        'Night Charge $currencySymbol $nightCharges is added for every night (10:00PM to 6:00AM) the trip touches.',
+        'Final Fare will be Charged on time basis.',
+      ],
+      'You can cancel for free until a driver accepts. After that, a charge of $currencySymbol $cancellationCharge is added to your next ride.',
+      'Maximum driver\'s duty can be 12 hours.',
+      // Where the fare comes from and when a trip becomes outstation (the admin sets the limit).
+      'The fare is based on the service area of your pickup point.',
+      ..._radiusNotes(),
     ];
 
   }
   // <<< END: initState - runs once when the screen opens - sets up data and listeners
+
+  // >>> START: _radiusNotes - the in-city rules: the city map, and the admin's optional distance limit
+  List<String> _radiusNotes() {
+    final p = Provider.of<TripOptionsProvider>(context, listen: false);
+    final notes = <String>[
+      // In-city means inside the city's map.
+      'Trips that stay inside the city area of your pickup are in-city. A pickup or drop outside it makes the trip an outstation trip.',
+      'If the ride leaves the city area (confirmed by the driver route log), the fare changes to outstation.',
+    ];
+    if (p.incityRadiusKm > 0) {
+      final km = p.incityRadiusKm.toStringAsFixed(p.incityRadiusKm % 1 == 0 ? 0 : 1);
+      notes.add('Trips farther than $km km from the pickup point are also outstation, even inside the city area.');
+    }
+    return notes;
+  }
+  // <<< END: _radiusNotes - the in-city rules, when the admin has set a limit
 
   // >>> START: getCharges - gets charges
   /// The night charge to quote: the rate card's charge per night when the
@@ -58,6 +86,7 @@ class RentalVehicleInfoState extends State<RentalVehicleInfo> {
     return night > 0 ? night : fallback;
   }
 
+  // >>> START: getCharges - gets charges
   void getCharges() {
     final tripOptionsProvider =
     Provider.of<TripOptionsProvider>(context, listen: false);
@@ -87,6 +116,7 @@ class RentalVehicleInfoState extends State<RentalVehicleInfo> {
       });
     }
   }
+  // <<< END: getCharges - gets charges
   // <<< END: getCharges - gets charges
 
   // >>> START: build - draws this screen/widget on the display
@@ -240,15 +270,16 @@ class RentalVehicleInfoState extends State<RentalVehicleInfo> {
                     child: ListView.builder(
                       shrinkWrap: true,
                       scrollDirection: Axis.horizontal,
-                      itemCount: 5,
+                      itemCount: texts.length,
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
                               Container(
-                                height: 15.h,
-                                width: 30.w,
+                                // tall and wide enough for the longest note (the cancellation rule used to be cut off)
+                                height: 21.h,
+                                width: 38.w,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(

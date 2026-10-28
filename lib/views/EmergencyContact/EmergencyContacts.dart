@@ -195,6 +195,8 @@ class _EmergencyContactState extends State<EmergencyContact> {
               Expanded(
                 child: Form(
                   key: _formKey,
+                  // errors update as the customer types
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

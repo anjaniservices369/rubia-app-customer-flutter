@@ -84,14 +84,7 @@ class _NotifactionpageState extends State<Notifactionpage> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () {
-        return Twl.forceNavigateTo(
-          context,
-          BottomNavigation(
-            tabIndexId: widget.boolnotificationPage != true ? 2 : 0,
-          ),
-        );
-      },
+      onWillPop: () => Twl.backToTab(context, widget.boolnotificationPage != true ? 2 : 0),
       child: Scaffold(
         backgroundColor: tBackground,
         appBar: AppBar(

@@ -29,6 +29,7 @@ class TaxiRidePage extends StatefulWidget {
   State<TaxiRidePage> createState() => _TaxiRidePageState();
 }
 
+// >>> START: _TaxiRidePageState - the data and logic behind its screen
 class _TaxiRidePageState extends State<TaxiRidePage>
     with SingleTickerProviderStateMixin {
   late final TaxiService _service = taxiServiceByKey(widget.serviceKey);
@@ -50,13 +51,16 @@ class _TaxiRidePageState extends State<TaxiRidePage>
   bool get _completed => _status == 9 || _status == 10;
   bool get _cancelled => _status == 3 || _status == 7;
 
+  // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     super.initState();
     _refresh();
     _poll = Timer.periodic(const Duration(seconds: 3), (_) => _refresh());
   }
+  // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
+  // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
   @override
   void dispose() {
     _poll?.cancel();
@@ -64,6 +68,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
     _review.dispose();
     super.dispose();
   }
+  // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
 
   // >>> START: _refresh - reads the ride from the server and reacts to its status
   Future<void> _refresh() async {
@@ -116,6 +121,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
   }
   // <<< END: _fitTrip - keeps the pickup, drop and driver in view
 
+  // >>> START: _markers - markers
   Set<Marker> _markers() {
     final r = _ride;
     if (r == null) return {};
@@ -145,6 +151,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
             icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure)),
     };
   }
+  // <<< END: _markers - markers
 
   // >>> START: _cancel - asks to cancel the ride and goes Home when it is cancelled
   Future<void> _cancel() async {
@@ -196,11 +203,13 @@ class _TaxiRidePageState extends State<TaxiRidePage>
   }
   // <<< END: _goHome - opens Home with a short message and no screen behind it
 
+  // >>> START: _fare - fare
   String get _fare {
     // total_fare is what the rider pays; final_price is the driver's share.
     final tot = double.tryParse('${_ride?['total_fare']}') ?? 0;
     return '$currencySymbol${tot.toStringAsFixed(0)}';
   }
+  // <<< END: _fare - fare
 
   // >>> START: _tripLines - pickup and drop of the ride
   Widget _tripLines() {
@@ -253,7 +262,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
               color: tDarkNavyblue, fontSize: 20, fontWeight: FontWeight.w800)),
       const SizedBox(height: 4),
       const Text('We are asking nearby taxi drivers to accept your ride.',
-          textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
+          textAlign: TextAlign.center, style: TextStyle(color: tGray)),
       const SizedBox(height: 10),
       _tripLines(),
       const SizedBox(height: 6),
@@ -262,7 +271,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
             style: TextStyle(
                 color: tDarkNavyblue, fontSize: 16, fontWeight: FontWeight.w800)),
         const Spacer(),
-        const Text('Pay by cash', style: TextStyle(color: Colors.black45)),
+        const Text('Pay by cash', style: TextStyle(color: tGray)),
       ]),
       const SizedBox(height: 10),
       SizedBox(
@@ -316,7 +325,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
             Text(name.isEmpty ? 'Your taxi driver' : name,
                 style: TextStyle(color: tDarkNavyblue, fontSize: 17, fontWeight: FontWeight.w800)),
             Text([vehicle, number].where((e) => e.isNotEmpty).join('  ·  '),
-                style: const TextStyle(color: Colors.black54)),
+                style: const TextStyle(color: tGray)),
           ]),
         ),
         if (phone.isNotEmpty)
@@ -337,9 +346,9 @@ class _TaxiRidePageState extends State<TaxiRidePage>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: tPrimaryColor.withOpacity(0.4))),
         child: Row(children: [
-          const Expanded(
+          Expanded(
               child: Text('Share this OTP with your taxi driver to start the ride',
-                  style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600))),
+                  style: TextStyle(color: tDarkNavyblue, fontWeight: FontWeight.w600))),
           Text('${r['otp'] ?? ''}',
               style: TextStyle(
                   color: tPrimaryColor, fontSize: 28, letterSpacing: 4, fontWeight: FontWeight.w900)),
@@ -367,7 +376,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
           style: TextStyle(color: tDarkNavyblue, fontSize: 20, fontWeight: FontWeight.w800)),
       const SizedBox(height: 4),
       const Text('You are on your way to the drop location.',
-          style: TextStyle(color: Colors.black54)),
+          style: TextStyle(color: tGray)),
       const SizedBox(height: 10),
       _tripLines(),
       const SizedBox(height: 6),
@@ -424,7 +433,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
       ),
       TextButton(
         onPressed: () => _goHome('Ride completed'),
-        child: const Text('Skip', style: TextStyle(color: Colors.black54)),
+        child: const Text('Skip', style: TextStyle(color: tGray)),
       ),
     ]);
   }
@@ -451,7 +460,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
         const Padding(
           padding: EdgeInsets.only(top: 4),
           child: Text('Please try again in a moment.',
-              style: TextStyle(color: Colors.black54)),
+              style: TextStyle(color: tGray)),
         ),
       const SizedBox(height: 12),
       SizedBox(
@@ -470,6 +479,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
   }
   // <<< END: _cancelledCard - the ride was cancelled
 
+  // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
     final Widget card = _cancelled
@@ -529,5 +539,7 @@ class _TaxiRidePageState extends State<TaxiRidePage>
       ),
     );
   }
+  // <<< END: build - draws this screen/widget on the display
 }
+// <<< END: _TaxiRidePageState - the data and logic behind its screen
 // <<< END: TaxiRidePage - follows one taxi ride from "finding a driver" to the rating

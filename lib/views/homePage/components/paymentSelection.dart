@@ -258,7 +258,7 @@ class _PaymentSelectionState extends State<PaymentSelection> {
                                       height: 5,
                                     ),
                                     Text(
-                                      'Go cashless, after ride pay by scanning QR code',
+                                      'Pay the driver in cash after the ride.',
                                       style: GoogleFonts.mulish(
                                         color: slectedIndex == 1
                                             ? tWhite

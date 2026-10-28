@@ -85,6 +85,7 @@ class _AllOptionsCardState extends State<AllOptionsCard> {
   }
   // <<< END: build - draws this screen/widget on the display
 
+  // >>> START: _optionTile - option tile
   Widget _optionTile({
     required String image,
     required String title,
@@ -146,5 +147,6 @@ class _AllOptionsCardState extends State<AllOptionsCard> {
       ),
     );
   }
+  // <<< END: _optionTile - option tile
 }
 // <<< END: _AllOptionsCardState - the data and logic behind its screen

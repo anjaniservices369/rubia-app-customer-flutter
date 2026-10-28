@@ -163,8 +163,8 @@ class LanguageTranslations extends Translations {
           'one_way': 'One-way trip',
 
           'round': 'Round trip',
-          'in_city': 'Incity',
-          'out_station': 'Out station',
+          'in_city': 'In city',
+          'out_station': 'Outstation',
           'automatic': 'Automatic',
           'manual': 'Manual',
           'pick_up_location': 'Select Pickup Location',
@@ -236,7 +236,7 @@ class LanguageTranslations extends Translations {
           'Add': 'ADD MONEY',
           'Notifaction': 'Notifications',
           'after_ride_pay_by_scanning_QR_code':
-              'Go cashless, after ride pay by scanning QR code',
+              'Pay the driver in cash after the ride.',
           'add_new_upi': 'Add New UPI ID',
           'you_need_to_have_registered_upi_id':
               'You need to have a registered UPI ID',
@@ -518,7 +518,7 @@ class LanguageTranslations extends Translations {
               'RC nuumber must be minimum 10 characters',
           'enter_rC_number': 'Enter RC Number',
           'save': 'Save',
-          ' Add_Emergency_Contact': 'Add Emergency Contact',
+          'Add_Emergency_Contact': 'Add Emergency Contact',
           ' Edit_Emergency_Contact': 'Edit Emergency Contact',
           //TakeYourSelfie
           'add_your_selfie': 'Add Your Selfie',
@@ -655,7 +655,7 @@ class LanguageTranslations extends Translations {
           "my_rewards": "My Rewards",
           "share_Your_Invite_Code": "Share your invite code",
           "When_your_friends_sign_up_this_referral_code_you_can_received_a_free_ride":
-              "When your friends sign up this referral code, you can received a free ride",
+              "When your friends sign up with this referral code, you can receive a free ride",
 
           'refer': 'Refer',
 //ReferalCodeView

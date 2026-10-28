@@ -68,36 +68,49 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       child: Scaffold(
         backgroundColor: tDarkNavyblue,
+        // bottom: false - the app already keeps clear of the system navigation bar (main.dart builder); a second bottom inset left a navy band
         body: SafeArea(
+          bottom: false,
           child: Form(
             key: _formKey,
+            // the error goes away as soon as the number is valid, instead of staying until Login is pressed again
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               children: [
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // With the keyboard open there is little room above the login panel: the logo is drawn smaller and the
+                      // tagline is left out, so nothing overflows; both come back when the keyboard closes.
                       Image.asset(
                         Images.LOGO,
-                        scale: 4,
+                        scale: MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 4,
                       ),
-                      SizedBox(height: 2.h),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 30),
-                        child: Text(
-                          'Book a driver or a ride in minutes',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.mulish(
-                            color: tWhite,
-                            fontWeight: FontWeight.w600,
-                            fontSize: isTab(context) ? 10.sp : 14.sp,
+                      if (MediaQuery.of(context).viewInsets.bottom == 0) ...[
+                        SizedBox(height: 2.h),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 30),
+                          child: Text(
+                            'Book a Service in minutes',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.mulish(
+                              color: tWhite,
+                              fontWeight: FontWeight.w600,
+                              fontSize: isTab(context) ? 10.sp : 14.sp,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
-                Container(
+                // Flexible: with the keyboard open the panel may be shorter than its content and then scrolls (it used to overflow).
+                Flexible(
+                  // Align: the panel sits on the bottom edge of its slot (a content-sized panel at the top of a bigger slot left a navy band)
+                  child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
                   decoration: BoxDecoration(
                     color: tWhite,
                     borderRadius: BorderRadius.only(
@@ -107,9 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     boxShadow: [tBoxShadow],
                   ),
                   child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                    ),
+                    // the Scaffold already makes room for the keyboard, so no extra bottom padding here
+                    padding: EdgeInsets.zero,
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
@@ -220,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               )
                             ],
                           ),
-                          SizedBox(height: tDefaultPadding * 3),
+                          SizedBox(height: tDefaultPadding),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Center(
@@ -233,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   borderRadius: 14.0,
                                   color: tPrimaryColor,
-                                  textcolor: Colors.black,
+                                  textcolor: tDarkNavyblue,
                                   child: Text(
                                     'login'.tr,
                                     style: TextStyle(
@@ -295,11 +307,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(
                             height: isTab(context)
                                 ? tDefaultPadding
-                                : tDefaultPadding / 2,
+                                : tDefaultPadding,
                           ),
                         ],
                       ),
                     ),
+                  ),
+                  ),
                   ),
                 ),
               ],
@@ -320,8 +334,8 @@ void _showDialog(BuildContext context) {
     builder: (BuildContext context) {
       return AlertDialog(
         backgroundColor: Colors.white,
-        title: Text('alert'.tr),
-        content: Text('please_select_terms_conditions'.tr),
+        title: Text('Terms & Conditions'),
+        content: Text('Please tick "I agree to the Terms & Conditions" to continue.'),
         actions: <Widget>[
           TextButton(
             child: Text('ok'.tr),

@@ -3,6 +3,7 @@
 //        (terms -> reason -> submit).
 // NOTES: Contains the cancellation reason list. Server: cancel-ride.
 // =============================================================================
+import 'dart:async';
 import 'package:base_project_flutter/api_services/userApi.dart';
 import 'package:base_project_flutter/providers/riderProvider.dart';
 import 'package:base_project_flutter/views/RideBooking/rideBill.dart';
@@ -102,11 +103,38 @@ class _RideInfoState extends State<RideInfo> {
   }
   // <<< END: getViewBooking - gets view booking
 
+  // The status changes while this page is open (a driver accepts, arrives...): it is read again every 6 seconds, quietly.
+  Timer? _refreshTimer;
+
+  // >>> START: _refresh - reads the ride again without showing any message on a failed check
+  Future<void> _refresh() async {
+    final id = widget.bookingDetails['id'].toString();
+    final info = await UserAPI().rideInfo(context, id, quiet: true);
+    final view = await UserAPI().viewBooking(context, id, quiet: true);
+    if (!mounted) return;
+    setState(() {
+      if (info != null && info['status'] == 'OK') rideDetails = info['details'];
+      if (view != null && view['status'] == 'OK') viewbookingDetails = view['details'];
+    });
+  }
+  // <<< END: _refresh - reads the ride again without showing any message on a failed check
+
+  // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+  // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
+
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     getViewBooking();
     getRideInfo();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 6), (_) {
+      if (mounted) _refresh();
+    });
 
     // TODO: implement initState
     super.initState();
@@ -443,7 +471,8 @@ class _RideInfoState extends State<RideInfo> {
                             Row(
                               children: [
                                 Image.asset(
-                                  Images.OUT_STATION,
+                                  // the "100 KM" sign belongs to an outstation trip only; an in-city ride shows the in-city icon
+                                  rideDetails['trip_type'] == 1 ? Images.IN_CITY : Images.OUT_STATION,
                                   scale: isTab(context) ? 7 : 7.5,
                                 ),
                                 SizedBox(
@@ -654,7 +683,10 @@ class _CancelRideBottomSheetState extends State<CancelRideBottomSheet> {
           Container(
             width: 80.w,
             child: Text(
-              'Cancellation of rides is subject to a fee as per our policy.',
+              // The rule: free until a driver accepts; after that a charge is added to the customer's next ride.
+              (int.tryParse(widget.bookingDetails['status'].toString()) ?? 0) == STATUS_WAITING_FOR_DRIVER
+                  ? 'No driver has accepted yet, so you can cancel for free.'
+                  : 'A driver has already accepted this ride. A cancellation charge will be added to your next ride.',
               textAlign: TextAlign.center,
               style: TextStyle(color: tDarkOrangeColor, fontFamily: "mulish", fontSize: isTab(context) ? 10.sp : 11.sp, fontWeight: FontWeight.w400),
             ),

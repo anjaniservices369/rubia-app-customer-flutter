@@ -45,8 +45,27 @@ class TripOptionsProvider with ChangeNotifier {
   String pickupDate = '';
   String pickupTime = '';
   int usageHours = 2;
+  // The trip type the server will price this booking as (it can differ from the customer's choice: a pickup or drop outside the city
+  // map makes an in-city trip an outstation one). Equal to tripType until an estimate says otherwise.
+  int pricedTripType = 1;
+  // true while usageHours holds the 12-hour start given to an outstation round trip (so it can be put back for the other trip types)
+  bool longDefaultApplied = false;
+  // from the server's estimate for an outstation round trip
+  String extraHourRate = '0';
+  String driverFoodStayNote = '';
   String couponCode = '';
   String estimateFare = '0.0';
+  // Why the phone's location could not be found: '' = no problem, 'off' = the phone's Location is switched off,
+  // 'denied' = the app may not use the location. Home shows it, with a way to fix it.
+  String locationIssue = '';
+  // Set by the server when it changes the trip to outstation (the drop is outside the city map).
+  String tripNotice = '';
+  // Why the last estimate/booking request was refused (the server's text), and, when the reason is an unrated previous
+  // ride, that ride's id so the app can ask for its rating.
+  String lastEstimateError = '';
+  String lastRateBookingId = '';
+  // The in-city limit around the pickup point set by the admin (0 = no limit), sent with the estimate.
+  double incityRadiusKm = 0;
   String paymentMethod = '1';
   String isVehicleDamageProtection = '1';
   bool isLoading = false;
@@ -109,6 +128,7 @@ class TripOptionsProvider with ChangeNotifier {
   // >>> START: resetProviderValues - clears everything after a booking is finished or cancelled
   void resetProviderValues() {
     tripType = 1;
+    pricedTripType = 1;
     riderType = 1;
     pickupLatitude = '';
     pickupLongitude = '';
@@ -121,11 +141,14 @@ class TripOptionsProvider with ChangeNotifier {
     pickupDate = '';
     pickupTime = '';
     usageHours = 2;
+    longDefaultApplied = false;
     couponCode = '';
     couponId = 0;
     couponDiscount = '0';
     paymentMethod = "1";
     estimateFare = '0.0';
+    tripNotice = '';
+    incityRadiusKm = 0;
     isVehicleDamageProtection = '1';
     isSaveBooking = false;
     selectedCityId = 0;
@@ -140,19 +163,24 @@ class TripOptionsProvider with ChangeNotifier {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled, handle it accordingly
+      // The phone's Location is switched off: Home says so and offers to open the settings.
+      locationIssue = 'off';
+      notifyListeners();
       return;
     }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        // Handle the case when the user denies the location permission permanently
-        return;
-      }
     }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      // The customer said no (or "never"): Home says so and offers to open the app settings.
+      locationIssue = 'denied';
+      notifyListeners();
+      return;
+    }
+    locationIssue = '';
 
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
@@ -362,6 +390,7 @@ class TripOptionsProvider with ChangeNotifier {
   // >>> START: setTripType - stores in-city or out-station
   void setTripType(int type) {
     tripType = type;
+    pricedTripType = type;
     notifyListeners();
   }
   // <<< END: setTripType - stores in-city or out-station
@@ -420,6 +449,18 @@ class TripOptionsProvider with ChangeNotifier {
   }
   // <<< END: setPickupTime - stores the chosen pickup time
 
+  /// True for an outstation round trip: it can last days, so the length has a much higher limit and quick +12 hours buttons.
+  bool get isLongTrip => pricedTripType == TRIP_TYPE_OUTSTATION && riderType == RIDER_TYPE_ROUNDTRIP;
+
+  /// The estimate page title: which kind of trip this is, e.g. "In city one-way trip" or "Outstation round trip".
+  String get tripTitle =>
+      (pricedTripType == TRIP_TYPE_OUTSTATION ? 'Outstation ' : 'In city ') +
+      (riderType == RIDER_TYPE_ONEWAY ? 'one-way trip' : 'round trip');
+
+  /// The longest trip the customer can book, in hours (an outstation round trip: 365 days; everything else: one duty of 12 hours,
+  /// anything longer is charged hourly when the ride ends).
+  int get maxUsageHours => isLongTrip ? 8760 : 12;
+
   // >>> START: setUsageHours - stores how many hours the driver is needed
   void setUsageHours(int hours) {
     usageHours = hours;
@@ -466,6 +507,8 @@ class TripOptionsProvider with ChangeNotifier {
     isNightChargeApplicable =
         calculateEstimate['isNightChargeApplicable'].toString();
     gst = calculateEstimate['gst'].toString();
+    extraHourRate = (calculateEstimate['extraHourRate'] ?? 0).toString();
+    driverFoodStayNote = (calculateEstimate['driverFoodStayNote'] ?? '').toString();
 
     securedFee = calculateEstimate['securedFee'].toString();
     platFormCharges = calculateEstimate['platformCharges'].toString();
@@ -522,6 +565,8 @@ class TripOptionsProvider with ChangeNotifier {
       // Make the API request with the 'usage_hours' parameter
       var response =
           await ServicesAPI().getEstimate(context, param, isSaveBooking);
+      lastEstimateError = '';
+      lastRateBookingId = '';
       if (response != null && response['status'] == 'OK') {
         isLoading = false;
         // Get the estimate value from the response
@@ -529,6 +574,11 @@ class TripOptionsProvider with ChangeNotifier {
 
         // Update the estimate property in the provider
         this.estimateFare = estimate.toString();
+        this.incityRadiusKm = double.tryParse((response['incity_radius_km'] ?? 0).toString()) ?? 0;
+        pricedTripType = int.tryParse((response['trip_type'] ?? tripType).toString()) ?? tripType;
+        this.tripNotice = response['trip_type_changed'] == true
+            ? (response['trip_notice'] ?? '').toString()
+            : '';
         this.couponDiscount = response['coupon_discount'].toString();
         // // Get the calculateEstimate values from the response
         final calculateEstimate = response['calculateEstimate'];
@@ -555,7 +605,11 @@ class TripOptionsProvider with ChangeNotifier {
         if (reason.contains('SQLSTATE') || reason.contains('SQL being executed')) {
           reason = 'Something went wrong on our side. Please try again.';
         }
-        if (context.mounted) {
+        lastEstimateError = response != null ? reason : '';
+        lastRateBookingId = (response is Map && response['rate_booking_id'] != null) ? response['rate_booking_id'].toString() : '';
+        // No answer at all (the phone is offline or the server cannot be reached): ApiHelper has already told the customer which
+        // of the two it is, so a second "could not get the estimate" message would only cover it.
+        if (context.mounted && response != null) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(reason)));
         }

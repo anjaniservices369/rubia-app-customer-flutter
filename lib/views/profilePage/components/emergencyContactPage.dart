@@ -214,6 +214,7 @@ class _EmergencyContactState extends State<EmergencyContact> {
                                             scale: isTab(context) ? 5 : 7,
                                           )),
                                     ),
+                                    SizedBox(width: 4.w), // gap between the photo and the number
                                     Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,

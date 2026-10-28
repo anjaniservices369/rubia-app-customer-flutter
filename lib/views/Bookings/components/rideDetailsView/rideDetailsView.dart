@@ -25,6 +25,10 @@ import '../../../bottomNavigation.dart/bottomNavigation.dart';
 import 'components/amountCardWidget.dart';
 import 'components/distanceAndDurationCard.dart';
 import 'components/rideCardWidget.dart';
+import '../finalRideDetailsView/routeConversionCard.dart';
+import '../../../../globalWidgets/paymentPendingNote.dart';
+import '../../../../globalWidgets/driverFoodStayNote.dart';
+import '../../../../globalWidgets/driverAvatar.dart';
 
 // import 'package:downloads_path_provider/downloads_path_provider.dart';
 
@@ -172,6 +176,8 @@ class _RideDetailsViewState extends State<RideDetailsView> {
                   child: Form(
                     key: _formKey,
                     child: Column(children: [
+                      PaymentPendingNote(rideDetails: widget.rideDetails),
+                      DriverFoodStayNote(rideDetails: widget.rideDetails),
                       RideCardWidget(
                         rideDetails: widget.rideDetails,
                       ),
@@ -179,6 +185,8 @@ class _RideDetailsViewState extends State<RideDetailsView> {
                         height: 1.5.h,
                       ),
                       if (widget.rideDetails['status'] == STATUS_RIDE_COMPLETED) DistanceAndDurationCardWidget(rideDetails: widget.rideDetails),
+                      // Booked in-city, travelled and billed outstation: the message and the route map.
+                      if (widget.rideDetails['status'] == STATUS_RIDE_COMPLETED) RouteConversionCard(rideDetails: widget.rideDetails),
                       SizedBox(
                         height: 2.h,
                       ),
@@ -338,13 +346,9 @@ class _RideDetailsViewState extends State<RideDetailsView> {
                                                   Row(
                                                     children: [
                                                       Container(
-                                                        decoration:
-                                                            BoxDecoration(shape: BoxShape.circle, border: Border.all(color: tDarkNavyblue, width: 2)),
-                                                        child: CircleAvatar(
-                                                          backgroundColor: tWhite,
-                                                          backgroundImage: widget.rideDetails['driver_image'] == ""
-                                                              ? NetworkImage(Images.UNKNOWN_IMAGE)
-                                                              : NetworkImage(widget.rideDetails['driver_image']),
+                                                        decoration: const BoxDecoration(),
+                                                        child: DriverAvatar(
+                                                          imageUrl: widget.rideDetails['driver_image']?.toString(),
                                                           radius: isTab(context) ? 20 : 30,
                                                         ),
                                                       ),
@@ -460,6 +464,13 @@ class _RideDetailsViewState extends State<RideDetailsView> {
                                           onTap: (startLoading, stopLoading, btnState) async {
                                             // Twl.forceNavigateTo(context, RatingCard());
 
+                                            // Rating and a written review are compulsory.
+                                            if (selectedRating == null || _rateTextController.text.trim().isEmpty) {
+                                              Twl.createAlert(context, 'Review needed',
+                                                  'Please give a rating and write a review for your driver to continue.');
+                                              return;
+                                            }
+
                                             if (_formKey.currentState!.validate()) {
                                               startLoading();
                                               // Twl.navigateTo(context, RatingCard(rideData: widget.rideData));
@@ -490,15 +501,9 @@ class _RideDetailsViewState extends State<RideDetailsView> {
                                   decoration: BoxDecoration(color: tWhite, boxShadow: [tBoxShadow], borderRadius: BorderRadius.circular(10)),
                                   child: Row(
                                     children: [
-                                      Container(
-                                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: tDarkNavyblue, width: 2)),
-                                        child: CircleAvatar(
-                                          backgroundColor: tWhite,
-                                          backgroundImage: widget.rideDetails['driver_image'] == ""
-                                              ? NetworkImage(Images.UNKNOWN_IMAGE)
-                                              : NetworkImage(widget.rideDetails['driver_image']),
-                                          radius: isTab(context) ? 20 : 30,
-                                        ),
+                                      DriverAvatar(
+                                        imageUrl: widget.rideDetails['driver_image']?.toString(),
+                                        radius: isTab(context) ? 20 : 30,
                                       ),
                                       SizedBox(
                                         width: 3.w,
@@ -841,8 +846,7 @@ class RideDetailsLocationCard extends StatelessWidget {
                     children: [
                       Container(
                         child: Text(
-                          'Spline Arcade, Aayyappa Society, Madhapur, Telangana (500081)',
-                          // rideDetails['pickup_address'].toString(),
+                          rideDetails['pickup_address'].toString(),
                           style: GoogleFonts.mulish(
                             color: tDarkNavyblue,
                             fontSize: isTab(context) ? 9.sp : 11.sp,
@@ -858,8 +862,7 @@ class RideDetailsLocationCard extends StatelessWidget {
                       ),
                       Container(
                           child: Text(
-                        'Secunderabad Railway Station, Secunderabad, Telangana (500081)',
-                        // rideDetails['drop_address'].toString(),
+                        rideDetails['drop_address'].toString(),
                         style: GoogleFonts.mulish(
                           color: tDarkNavyblue,
                           fontSize: isTab(context) ? 9.sp : 11.sp,

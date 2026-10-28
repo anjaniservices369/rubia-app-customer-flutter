@@ -31,7 +31,8 @@ There are **three separate apps / systems** that work together:
 
 ## 2. The customer's journey (in plain words)
 
-1. **Login** → the first screen: logo, a welcome line, the mobile number and the terms tick.
+1. **Login** → the first screen: logo, the “Welcome! Book a professional service.” tagline,
+   mobile number and the terms tick.
    The server sends a 4-digit **OTP by SMS**.
 2. **OTP** → the app reads the SMS automatically and signs the customer in.
 3. **Registration (first time only)** → on top of Home: **name, email and an optional referral
@@ -47,7 +48,10 @@ There are **three separate apps / systems** that work together:
    placed"*.
 7. **Waiting for driver** → a driver accepts. The customer sees the driver and a 4-digit **ride OTP**.
 8. **Ride** → the driver arrives, the customer shares the OTP, the ride starts and ends.
-9. **Rate the driver, right when the ride ends** → as soon as the ride is completed a
+9. **Bill first, then rate the driver once the driver has confirmed the payment** → when the ride
+    ends the customer sees the final bill, with a note to pay the driver (it disappears once paid).
+    When the driver confirms the payment in the Partner app (`collect-cash`, which sets
+    `payment_status` to 1) a
     **"Ride Completed"** sheet opens on top of whatever screen the customer is on (Home,
     Bookings, the live ride screen): driver name, stars, optional review, **Submit** or
     **Later**. **Submit** shows "Thanks for your rating" and opens **Home**; Back does not return
@@ -287,6 +291,9 @@ kept out of git through `.git/info/exclude`, so they are never committed by acci
 
 ## 8. Known issues and open decisions (for the owner)
 
+0. **27 Oct 2026 additions** (booking radius, trip notices, route card, live tracking, cancelling) need the backend release in the backend's
+   `DEPLOY.md` section 33. The live server is still the older backend; see section 15.3 and 15.5.
+
 1. **Live server is not updated.** Login on the live server fails with "OTP failed" until the new
    backend package is deployed (see the backend's `DEPLOY.md`).
 2. **Dispatch to drivers** needs a scheduled job (cron) on the server to offer new bookings to
@@ -524,18 +531,55 @@ Setting up the database and backend for this is in section 7.2.
 
 | # | Screen | What the customer does | Code |
 |---|---|---|---|
-| 1 | **Login** (first screen; the old separate "Get Started" welcome screen is gone) | Logo and a welcome line, mobile number, tick the terms, **Login**. | `logiPage/loginPage.dart` |
+| 1 | **Login** (first screen; the old separate "Get Started" welcome screen is gone) | Logo and “Welcome! Book a professional service.”, mobile number, tick the terms, **Login**. | `logiPage/loginPage.dart` |
 | 2 | **OTP** | Enters the 4 digits (read from the SMS; the 4th digit submits by itself). | `otpPage/otpPage.dart` |
 | 3 | **About you** (sheet over Home, cannot be dismissed) | **Full name and email are required.** Optional: a **photo** (camera or gallery; uploaded straight away), **gender** (Male / Female / Other chips), **date of birth** (calendar, saved as dd-MM-yyyy like the Profile screen) and a **referral code**. A wrong referral code shows "Referral code does not exist" and the sheet stays, so it can be fixed or cleared. A photo that fails to upload only shows a message (it can be added later in Profile). | `PersonalDetails/personalDetailsView.dart` |
 | 4 | **Emergency contacts** (full screen) | Two phone numbers, required (used by SOS). No back arrow; Back asks to exit the app. | `EmergencyContact/EmergencyContacts.dart` |
 | 5 | **Home + location sheet** | Home opens with the "enable location" sheet (the old separate step). | `bottomNavigation.dart` (`showLocationSheet`), `PersonalDetails/components/EnableLocationView.dart` |
+
+Interactive prototype: [registration-flow.html](docs/uiux/registration-flow.html).
+UI/UX documentation: [docs/uiux/README.md](docs/uiux/README.md).
+The interactive [login, Home, Driver and Taxi booking prototype](docs/uiux/service-booking-flow.html)
+covers phone verification, the customer home screen, the Driver estimate and
+confirmation, and selecting and requesting a Taxi ride.
+Use Rubia navy instead of black or near-black for UI text, icons, controls and
+shadows: `tDarkNavyblue` (`#144272`) in Flutter and `#142A43` in the UI/UX docs.
+Use the existing grey tokens for secondary text, dividers and disabled states.
+
+### 12.2 Interactive UI/UX prototype
+
+The browser prototype is a design preview, not a connected app or a replacement
+for the flows described in sections 10 and 11. It demonstrates:
+
+- **Login and verification:** valid 10-digit mobile number, required terms
+  acceptance, then a four-digit OTP entry.
+- **Home:** pickup location, separate Driver and Taxi service cards, a Driver
+  promotional banner, and Home/Profile navigation.
+- **Driver booking:** one-way or round trip; in-city or out-station; automatic
+  or manual gearbox; SUV+, SUV, Sedan or Hatchback; pickup, optional drop for
+  round trips, and pickup time. The estimate view summarizes the selection and
+  leads to a simulated confirmation.
+- **Taxi booking:** Bike, Auto or Car; pickup and destination; sample fare,
+  cash-payment summary, review step and simulated request confirmation.
+
+Journey controls can open each major flow directly. Form actions validate
+required fields and dates. The fare values, location, OTP success, and booking
+results are illustrative only: the prototype does not call APIs, request
+permissions, save user data, charge payment, or contact drivers. For the real
+API behavior and booking rules, refer to sections 10 and 11. Detailed preview
+instructions and design conventions are in [docs/uiux/README.md](docs/uiux/README.md).
+
+The real app has only **Home** and **Profile** in the bottom navigation.
+Bookings opens from the Bookings button on the Driver booking screen and after
+ride confirmation, not from a third bottom tab. The prototype does not include
+the Bookings list itself.
 
 Before: Get Started → Login → OTP → name and email sheet → referral sheet → location sheet, and the
 emergency contacts were **not** part of that chain: a new customer got them as a surprise full
 screen on the **next app start**, and after saving them the old code opened the referral and
 location sheets again and left the customer on the contacts screen.
 
-### 12.2 Rules kept
+### 12.3 Rules kept
 
 - Emergency contacts stay **required**. If the app is closed before they are saved, the next start
   opens the contacts screen (`main.dart`), then Home (no location sheet in that case).
@@ -545,14 +589,14 @@ location sheets again and left the customer on the contacts screen.
   never returns to a registration screen.
 - Deleted as unused: `onBoardingpage/onBoardingPage.dart`, `PersonalDetails/components/referalCardView.dart`.
 
-### 12.3 Tested on the phone (26 Oct 2026, new test number 9999900002)
+### 12.4 Tested on the phone (26 Oct 2026, new test number 9999900002)
 
 Login is the first screen; OTP 1234 signed in and opened the name sheet; a wrong referral code
 showed the error; with the field cleared **Next** opened Emergency Contacts; two numbers saved
 (`user_emergency_contacts` rows for customer 7146) and Home opened. With the contacts deleted and
 the app restarted, the contacts screen came first and then Home.
 
-### 12.3 Tested on the phone (26 Oct 2026, new test numbers 9999900002 and 9999900003)
+### 12.5 Tested on the phone (26 Oct 2026, new test numbers 9999900002 and 9999900003)
 
 Login is the first screen; OTP 1234 signed in and opened the name sheet; a wrong referral code
 showed the error; with the field cleared **Next** opened Emergency Contacts; two numbers saved
@@ -562,7 +606,7 @@ Second run (customer 7147, Veera): photo chosen from the gallery, gender Female,
 05-01-2000 and name/email were saved in one go (`user.gender`, `user.date_of_birth`,
 `user.profile_image` filled) and the Profile tab shows the photo.
 
-### 12.4 Terms and Conditions, Privacy Policy and Refund Policy (written in the admin dashboard)
+### 12.6 Terms and Conditions, Privacy Policy and Refund Policy (written in the admin dashboard)
 
 The three texts are no longer a website link: they are **documents the Rubia team edits in the
 admin dashboard** and the app shows them in its own screen. **Every app keeps its own set** (the
@@ -607,7 +651,7 @@ to exactly one app (`page.app_key`).
   app-download block; the real website pages are `/TermsConditions/`, `/Privacypolicy/` and
   `/RefundPolicy/`.
 
-### 12.5 Not done yet
+### 12.7 Not done yet
 
 - No version tracking: customers are not asked to accept a changed version of the terms again.
 - The editor is a rich-text box (CKEditor); there is no per-language text, so every language
@@ -665,13 +709,116 @@ Because the app now has several services, the Profile option **My Rides** became
   environment. The implementation therefore follows the existing Rubia visual language.
 
 ---
+## 15. Trip changes, route card, live lists and connection messages (27 Oct 2026)
+
+**Added 28 Oct 2026 - end of a ride and registration.**
+- **Bill, pay, rate, Completed.** After the driver completes the ride the customer sees the final bill, with a note to pay the driver
+  (`lib/globalWidgets/paymentPendingNote.dart`). The card in Active says *Payment pending*, then *Rate your driver* once the driver has
+  collected the payment. The rating sheet (`rateRide.dart`) opens by itself and is **compulsory**: stars and a written review, no Later, no
+  Back, no dragging it away; the same rule is on the rating cards of the two ride-details screens. A ride moves to Completed only when it
+  is paid and rated.
+- **Booking is refused until the last ride is rated.** The estimate/confirm dialog shows the server's reason; OK opens the rating sheet for
+  the ride the server names (`rate_booking_id`; `RideRatingPrompt.promptForBooking`).
+- **Home** has the heading *Book a Service* above the service cards; the login tagline reads *Book a Service in minutes* (the tagline and a
+  smaller logo give way while the keyboard is open).
+- **Screen-by-screen pass (28 Oct 2026).** Login: the Login button stays above the navigation bar and the terms alert is readable. OTP: a wrong
+  code says "That code didn't match", the timer reads "Resend code in 25s". The phone's Back key on Notifications opens Profile (it closed the
+  app); `Twl.backToTab` is the helper for this, other screens still use the old `forceNavigateTo` pattern and should be moved to it. Refer & Earn:
+  the Refer button no longer shows a red crash box (an int where a double was expected) and *T&Cs* opens the app's Terms page. Emergency
+  Contact: the sheet title was a raw key (a translation key with a leading space). Coupons: an empty list says so. Wording: *In city* /
+  *Outstation*; the favorites button says *Save*. Server notification texts were corrected ("Ride started successfully").
+- **Outstation round trip (28 Oct 2026).** The estimate screen shows a minus / plus hours stepper with +12 hrs / +24 hrs / +7 days buttons (up to 8,760 hours = 365 days) and
+  the same length in days; other trips have a 1-12 hour picker (`TripOptionsProvider.isLongTrip`, `maxUsageHours`). The fare sheet says the base fare
+  covers the first base hours, then the hourly rate, the night charge, and that the driver's food and stay are provided by the customer
+  (`driverFoodStayNote.dart` on the ride details and bill).
+- **Bottom bar (28 Oct 2026).** The system navigation bar is white with dark icons and the band under the app is white (`main.dart` builder), so it
+  merges with the app's own bottom bar instead of showing a grey strip. (A map-first Home and a Bookings tab were tried by mistake and removed:
+  the request was about the splash screen.)
+- **Registration** (name and email required; photo, gender, date of birth and referral code optional; then two emergency contacts): errors
+  update as the customer types, the name error is readable, Next fits on the sheet. **The app is portrait only** (landscape made screens
+  overflow). The Profile header no longer overflows.
+
+The rules behind these screens (who is offered a booking, in-city / outstation, one way / round trip, distance) are written once, in
+plain words, in the backend's `BUSINESS_GUIDE.md` section 24. This section is what the customer app does about them.
+
+### 15.1 What the customer sees now
+- **A drop can be anywhere.** The drop picker and the saved places no longer block a drop outside the city ("Selected location is not inside
+  any city boundary", "Pickup and Drop location should be same city" are gone for drops) and a drop never changes the booking's city: the
+  pickup chooses the price. The pickup is still checked against the served cities.
+- **Estimate screen notice.** In-city means inside the city's map. When the pickup or drop is outside it (or the drop is beyond the admin's
+  optional in-city radius) the server makes the trip outstation and the estimate says why, above the fare ("Your drop is outside the Hyderabad
+  city area. This trip is booked as an outstation trip and is priced as one."). The text comes from the server (`trip_notice`).
+- **Fare breakup sheet** (the (i) next to the estimate): extra instruction boxes: "The fare is based on the service area of your pickup
+  point"; trips that stay inside the city area are in-city and a pickup or drop outside it makes an outstation trip; a ride that leaves the
+  city area (confirmed by the driver's route log) is billed as outstation; and, when the admin has set an in-city radius X
+  (`incity_radius_km`), trips farther than X km from the pickup are outstation even inside the city area.
+- **Night fares include GST** like day fares (the quote and the bill add up; a 00:45 booking shows Rs 819, it was Rs 780).
+- **"View full details" is a button** on every booking card (it only looks like a button; tapping anywhere on the card opens the details).
+- **Lists follow the server.** The Active / Completed / Cancelled lists reload by themselves every 8 seconds (without a spinner, only
+  redrawn when something changed) and when the app comes back to the front, so a driver accepting, the ride starting, a cancel or a
+  completion shows up without leaving the screen. The ride screen checks every 5 seconds.
+- **Completed ride details.** When a ride was billed differently from the booking, a card says so in words with a map of the route:
+  "Booked as a one-way trip. The ride went 20.6 km out and came back to the pickup point, so it was billed as a round trip." (file
+  `lib/views/Bookings/components/finalRideDetailsView/routeConversionCard.dart`, shown on the completed-ride details and the final bill).
+  The final bill can differ from the quote because of this.
+- **Cancelling.** The ride screen's Cancel Ride asks to tick "I agree to the Terms & Conditions", then for a reason. A waiting booking is
+  cancelled free; after a driver accepted the customer is charged (Rs 200 now).
+- **Coupon.** Typing a code and pressing Apply now looks the code up in the available coupons and applies it; an unknown code says "This
+  coupon code is not valid for this ride." (the button used to do nothing). The dev database has no coupons, so only the rejection was tested.
+- **Registration.** Emergency contacts can be saved again (the server used to answer "Emergency contact Exist" for most customers).
+- **Phones with on-screen buttons** (Android 15+ draws apps edge to edge): the whole app is kept above the navigation bar
+  (`MaterialApp.builder` in `main.dart`), so Next, Cancel Ride and the rating sheet's Later link are no longer half hidden.
+- **Location off or not allowed.** Home says "Location is off. Tap to turn it on" / "Location is not allowed. Tap to allow it" and opens
+  the right setting, instead of staying on "fetching for current location".
+
+### 15.2 Connection messages (the "Check Internet" bar)
+`lib/api_services/ApiHelper.dart`. Every failed request used to show "Check Internet", even when the phone had internet and only the
+server could not be reached, and a background refresh could repeat it. Now:
+- the message says **"Check Internet"** only when the phone cannot reach the internet at all (a quick DNS lookup decides); when the internet
+  works but the Rubia server does not answer it says **"Cannot reach the Rubia server right now. Please try again in a moment."**;
+- it shows at most once every 15 seconds;
+- background polls pass `quiet: true` (`getTypePost`, `getTypeGet`, `UserAPI.viewBooking`, `UserAPI.fetchBookingsList`) and never show it.
+
+### 15.3 Which server the app talks to
+- A normal build uses the live server (`https://rubiaservices.org/api`, `API_BASE_URL` default in `lib/constants/apiConstants.dart`).
+  **The live server is an older backend** (for example it has no `/user/legal-page` route), so the booking radius, trip notices, route
+  card and tracking need the backend release in the backend's `DEPLOY.md` section 33 first.
+- For a backend on the PC: `flutter build apk --debug --dart-define=API_BASE_URL=http://localhost:8080/api` and
+  `adb reverse tcp:8080 tcp:8080`. **That build works only while the forward exists**: restarting adb or unplugging the cable drops it
+  and the app then says it cannot reach the server although the phone is online. Re-run `adb reverse` for every connected phone
+  (`adb -s <id> reverse --list` shows it).
+
+### 15.4 Tested on two phones (27 Oct 2026: realme RMX5256 as customer 9490845226, Redmi Note 12 5G as driver 7893653899)
+One-way outstation, Manual, Hatchback (estimate 1995, stayed outstation); round trip in-city 4 h (525; ended 6 km away, billed one way 420);
+one-way in-city with a drop 20.6 km away (notice shown, ride came back to the pickup, billed round trip 945, details show the route card);
+night booking (819 with GST); customer cancel (waiting, free) and driver cancel (the card went back to Waiting for Driver by itself); two
+customers booking at the same moment; the same booking accepted twice at once (one wins). Driving was simulated through the driver API
+(pickup, start, positions, complete); the phones were used for booking, accepting and viewing.
+
+### 15.5 Not done / open
+- The customer app does not yet show the driver's live position or the distance so far (the server sends `driver_latitude/longitude`,
+  `live_distance_km`, `ride_elapsed_min` on the booking details while the ride is on).
+- The estimate screen's hours selector is a swipe wheel; the visible 1 / 2 / 3 are not tappable.
+- The rating sheet's "Later" is easy to miss on phones with on-screen buttons even after the fix above; check on a real phone.
+- Decisions for the owner: a floor for the final fare (a changed ride can cost less than the quote) and whether the drop picker should also
+  accept pickups outside the served cities.
+
+## 16. Look and behaviour pass, Back key, account deletion (28 Oct 2026)
+- **Screen look:** one colour system (navy text, orange actions); car-type chips use one picture box so every chip is the same size; the Automatic / Manual bar is as wide as the cards around it; the ride card shows the trip labels as small pills; distance reads "51.84 km"; the Home service cards fill the row when only one or two services are on; the splash is plain white with the logo centred (flutter_native_splash.yaml, Android launch_background.xml).
+- **Back key:** the helpers in globalFuctions/globalFunctions.dart (navigateTo, forceNavigateTo) return false so the phone's Back key never closes the app by accident; Twl.backToTab returns to the right tab. The drop picker opens on top of the booking form and pops, so the form keeps what was typed.
+- **Estimate:** the title says In city one-way / Outstation one-way / Outstation round trip; the hours control starts at the base hours of that trip type (outstation round trip is priced by the hour, up to 365 days, driver food and stay provided by the customer).
+- **Compulsory rating:** a new booking is refused until the previous ride is paid and rated; the rating sheet asks for stars and a review.
+- **Delete account:** Profile -> Delete account (red text under Logout) asks for confirmation and calls POST /user/delete-account (UserAPI.deleteAccount); the account and personal data are erased at once and the app returns to Login. A ride in progress blocks it with the server's message. The public page for people without the app is /account-deletion on the backend (its address goes in the Play Console Data safety form).
+- **Open:** a working map key (Ola Maps key, or a Google key with Routes and Geocoding enabled) must be set in the dashboard Integrations, or one-way estimates cannot be calculated.
+
+
 ## Live inventory (generated)
 
 <!-- AUTO:inventory:start -->
-_This block is generated by `tools/update_docs.py` (last run 2026-10-26). Do not edit it by hand._
+_This block is generated by `tools/update_docs.py` (last run 2026-10-28). Do not edit it by hand._
 
-- Source files: **155**
-- Server endpoints: **52**  (see `docs/API_ENDPOINTS.md`)
+- Source files: **160**
+- Server endpoints: **53**  (see `docs/API_ENDPOINTS.md`)
 - Full file list: `docs/CODE_MAP.md`; status numbers: `docs/STATUS_CODES.md`
 - Files without an explanatory header: **0**
 - Files without START/END markers: **0**

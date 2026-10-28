@@ -430,7 +430,7 @@ class _ClockState extends State<Clock> {
                                   ),
                                   borderRadius: 14.0,
                                   color: tPrimaryColor,
-                                  textcolor: Colors.black,
+                                  textcolor: tDarkNavyblue,
                                   child: Text(
                                     'OK'.tr,
                                     style: TextStyle(

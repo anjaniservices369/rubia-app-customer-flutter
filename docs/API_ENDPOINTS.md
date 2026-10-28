@@ -8,6 +8,7 @@ The server address itself is `apiBaseUrl` (set with `--dart-define=API_BASE_URL=
 |---|---|---|
 | `SEND_OTP` | `/user/send-otp` | no |
 | `LOGOUT` | `/user/logout` | yes |
+| `DELETE_ACCOUNT` | `/user/delete-account` | yes |
 | `VERIFY_OTP` | `/user/verify-otp` | no |
 | `CHECK_API` | `/user/check` | yes |
 | `SIGNUP_FORM` | `manager/signup` | no |

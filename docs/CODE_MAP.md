@@ -61,16 +61,20 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `buttonWidget.dart` | The main app button, with a built-in loading spinner. | Screens call startLoading/stopLoading around a server request. |
 | `customPopup.dart` | Pop-up menu on a favourite address (edit / delete). | **UNUSED: no screen imports it** Deleting calls the server. |
 | `customTextFiled.dart` | Reusable form field with the app's styling. | Visual component only. |
+| `driverAvatar.dart` | The driver's round photo, with the default avatar when there is no photo or the photo cannot be loaded. | A driver must have a profile photo to accept rides (server rule), so in normal use the real photo shows. The default avatar only covers a photo link that does not load (no signal, a deleted file), so the card never shows an empty ring. |
+| `driverFoodStayNote.dart` | A note on an outstation round trip's details and bill: the customer provides the driver's food and accommodation. | Shown only for an outstation (trip_type 2) round trip (rider_type 2). They are not part of the fare. |
 | `dropGoogleMap.dart` | Map screen where the customer picks the DROP-OFF point; it checks the point is inside the service area (check-boundary). | Result is stored in TripOptionsProvider. // ignore_for_file: unused_local_variable |
 | `googleMapPage.dart` | INACTIVE: whole file is commented out; googleMapScreen.dart is the live version. | **UNUSED: no screen imports it** Safe to delete. // ignore_for_file: unused_local_variable |
 | `googleMapScreen.dart` | Shared map picker: search or drag the pin, reads the address and pincode of the point. | Used by the pickup, drop and favourite-address screens. ignore_for_file: unused_local_variable |
 | `helpandsos.dart` | Help and SOS buttons shown on the ride screens. | SOS alerts the emergency contacts. |
 | `legalDocumentPage.dart` | Shows Rubia's Terms and Conditions, Privacy Policy or Refund Policy inside the app. The text is written by the Rubia team in the admin dashboard (Customers > Terms & Policies) and loaded from the server. | Server: /api/user/legal-page?type=terms|privacy|refund (no login, so it also works from the login screen). The text is HTML from the dashboard's editor; it is drawn with scripts switched off and links blocked, so it can only be read. |
 | `locationcard.dart` | Card showing pickup and drop addresses of a trip. | Visual component. |
+| `paymentPendingNote.dart` | A note at the top of a completed ride's bill while the driver has not yet confirmed the payment. | Shown only when the ride is completed and booking.payment_status is not 'paid' (collect-cash in the Partner app sets it). The customer pays the driver; once the driver confirms, the app asks for the rating (see rateRide.dart). |
 | `pickupgoogleMap.dart` | Map screen where the customer picks the PICKUP point; checks the service area. | Result is stored in TripOptionsProvider. // ignore_for_file: unused_local_variable |
 | `priceListWidget.dart` | One row of a price breakdown (label + amount). | Visual component. |
 | `rideDriverCard.dart` | Card with the assigned driver's photo, name, vehicle and call button. | Visual component. |
 | `textformfieldWidget.dart` | Reusable text form field. | Visual component only. |
+| `viewDetailsButton.dart` | The "View full details" button at the bottom of every booking card. | Looks like a button; the tap itself is handled by the card around it (the whole card opens the details), unless [onTap] is given. |
 
 ## `models`
 
@@ -189,7 +193,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `bookingHistoryList.dart` | List of past bookings with paging. | Server: list-bookings. |
 | `bookingcard.dart` | Booking summary card used in lists. | Visual component. |
 | `invoiceCardWidget.dart` | INACTIVE: whole file is commented out. | **UNUSED: no screen imports it** Safe to delete. |
-| `rateRide.dart` | Asks the customer to rate the driver as soon as a ride is completed, wherever they are in the app, instead of leaving the rating to the Completed rides list. | Server: view-booking (status), add-review. The active booking id is kept in the phone's saved data ('booking_id', written when the booking is confirmed). 'ride_resolved_id' remembers the booking that was already handled, so one ride is never asked twice. 'Later' still leaves the rating available on the ride's details. |
+| `rateRide.dart` | Asks the customer to rate the driver once a ride is completed AND paid (the driver has confirmed the payment in the Partner app), wherever they are in the app. Until then the customer sees the final bill. The rating and a written review are COMPULSORY: the sheet cannot be closed or skipped, and the server refuses a new booking until the previous ride is rated. | Server: view-booking (status), add-review. The active booking id is kept in the phone's saved data ('booking_id', written when the booking is confirmed). A completed, paid ride is asked again on every check until it is rated; 'ride_resolved_id' remembers rides that need nothing more (rated, or cancelled). |
 | `ridehistoryDetails.dart` | Details of a finished taxi ride. | Server: taxi ride info. |
 | `riderDetailsPayment.dart` | Booking details with the driver, OTP and payment; polls the booking status. | Server: view-booking-details. |
 | `timeDistanceCard.dart` | Card with trip time and distance. | **UNUSED: no screen imports it** Visual component. |
@@ -203,6 +207,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 | `finalCompleteBill.dart` | Full bill of a completed ride. | Visual component. |
 | `finalDistanceAndDurationCardWidget.dart` | Final distance and duration card. | Visual component. |
 | `finalRideDetailsView.dart` | Details page of a COMPLETED ride with the bill and the rating card. | Server: add-review. |
+| `routeConversionCard.dart` | "Booked in-city, travelled and billed outstation" card for the closing details of a ride. | Shown only when the server says the ride was converted (radius_converted). It gives the plain-language message (radius_note) and a map of the route the driver recorded, with the pickup and the end point. Data comes with the booking details: radius_converted, radius_note, route_points (list of lat/lng). |
 
 ## `views/Bookings/components/rideDetailsView`
 

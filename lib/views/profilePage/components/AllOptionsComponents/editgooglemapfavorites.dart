@@ -7,6 +7,7 @@
 import 'package:base_project_flutter/constants/constants.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geocoder2/geocoder2.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -88,7 +89,10 @@ class _editfavAddressGoogleMapPageState
   // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // A full-screen light map: dark status bar icons, so the clock and battery can be read (they were white on the map).
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
       body: Center(
           child: PlacePicker(
         apiKey: mapKey,
@@ -391,7 +395,7 @@ class _editfavAddressGoogleMapPageState
         },
         region: 'in',
       )),
-    );
+    ));
   }
   // <<< END: build - draws this screen/widget on the display
 }

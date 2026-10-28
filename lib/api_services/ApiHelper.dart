@@ -32,7 +32,7 @@ class ApiHelper {
   /// Set [idempotent] only for calls that are safe to repeat: they are retried
   /// once when the connection drops.
   getTypePost(BuildContext context, String uri, Map<String, String> params,
-      {bool idempotent = false}) async {
+      {bool idempotent = false, bool quiet = false}) async {
     return _send(context, uri, () async {
       // Build a form (multipart) POST to  <server address> + <endpoint path>.
       final request = http.MultipartRequest('POST', Uri.parse(apiBaseUrl + uri));
@@ -40,7 +40,7 @@ class ApiHelper {
       request.fields.addAll(params);
       // Send it and read the whole reply.
       return http.Response.fromStream(await request.send());
-    }, retry: idempotent);
+    }, retry: idempotent, quiet: quiet);
   }
   // <<< END: getTypePost - sends form data to the server (POST) and returns its reply
 
@@ -70,10 +70,10 @@ class ApiHelper {
 
   // >>> START: getTypeGet - asks the server for data (GET) and returns its reply
   /// GET [uri]; shows a message and returns null on failure.
-  getTypeGet(BuildContext context, String uri) async {
+  getTypeGet(BuildContext context, String uri, {bool quiet = false}) async {
     // A GET only reads data, so it is always safe to retry once.
     return _send(context, uri, () => http.get(Uri.parse(apiBaseUrl + uri)),
-        retry: true);
+        retry: true, quiet: quiet);
   }
   // <<< END: getTypeGet - asks the server for data (GET) and returns its reply
 
@@ -81,7 +81,7 @@ class ApiHelper {
   // >>> START: _send - runs one request: time limit, one retry if the connection drops, error messages, expired-login check
   Future<dynamic> _send(BuildContext context, String uri,
       Future<http.Response> Function() request,
-      {bool retry = false}) async {
+      {bool retry = false, bool quiet = false}) async {
     try {
       http.Response response;
       try {
@@ -105,18 +105,18 @@ class ApiHelper {
       return jsonMap;
     } on SocketException {
       // No internet.
-      _showNetworkError(context);
+      _showNetworkError(context, quiet: quiet);
     } on TimeoutException {
       // The server did not answer in 30 seconds.
-      _showNetworkError(context);
+      _showNetworkError(context, quiet: quiet);
     } on http.ClientException catch (e) {
       // The connection was cut while talking to the server.
       debugPrint('Request to $uri failed: $e');
-      _showNetworkError(context);
+      _showNetworkError(context, quiet: quiet);
     } on FormatException catch (e) {
       // The server answered with something that is not valid JSON.
       debugPrint('Unreadable reply from $uri: $e');
-      _showNetworkError(context);
+      _showNetworkError(context, quiet: quiet);
     }
     return null;
   }
@@ -124,13 +124,39 @@ class ApiHelper {
 
   // Shows the short "Check Internet" message at the bottom of the screen.
   // >>> START: _showNetworkError - tells the user the internet is not working
-  void _showNetworkError(BuildContext context) {
+  static DateTime? _lastNetworkNotice;
+
+  // >>> START: _showNetworkError - tells the user the internet is not working
+  /// Tells the customer a request failed. Background polling passes [quiet] and never shows anything. Otherwise the notice
+  /// appears at most once every 15 seconds (it used to stack up, one per failed call), and it says what is actually wrong:
+  /// "Check Internet" only when the phone cannot reach the internet at all; when the internet works but the Rubia server does not
+  /// answer, it says so instead of blaming the customer's connection.
+  Future<void> _showNetworkError(BuildContext context, {bool quiet = false}) async {
     // The screen may have closed while we were waiting.
+    if (quiet || !context.mounted) return;
+    final now = DateTime.now();
+    if (_lastNetworkNotice != null &&
+        now.difference(_lastNetworkNotice!) < const Duration(seconds: 15)) {
+      return;
+    }
+    _lastNetworkNotice = now;
+    bool online = true;
+    try {
+      final found = await InternetAddress.lookup('google.com').timeout(const Duration(seconds: 3));
+      online = found.isNotEmpty && found.first.rawAddress.isNotEmpty;
+    } catch (_) {
+      online = false;
+    }
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Check Internet')),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Text(online
+          ? 'Cannot reach the Rubia server right now. Please try again in a moment.'
+          : 'Check Internet'),
+    ));
   }
+  // <<< END: _showNetworkError - tells the user the internet is not working
   // <<< END: _showNetworkError - tells the user the internet is not working
 
   // >>> START: getHeader - prepares the login header, first confirming the saved login is still valid

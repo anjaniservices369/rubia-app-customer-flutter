@@ -57,6 +57,7 @@ class _TermsConditionsCardState extends State<TermsConditionsCard> {
   }
   // <<< END: build - draws this screen/widget on the display
 
+  // >>> START: _policyItem - policy item
   Widget _policyItem({
     required String icon,
     required String title,
@@ -83,5 +84,6 @@ class _TermsConditionsCardState extends State<TermsConditionsCard> {
       ),
     );
   }
+  // <<< END: _policyItem - policy item
 }
 // <<< END: _TermsConditionsCardState - the data and logic behind its screen

@@ -361,7 +361,7 @@
 //                               //           // borderRadius: BorderRadius.circular(15),
 //                               //           borderRadius: 15.0,
 //                               //           color: tPrimaryColor,
-//                               //           textcolor: Colors.black,
+//                               //           textcolor: tDarkNavyblue,
 //                               //           child: Text(
 //                               //             "Login",
 //                               //             style: TextStyle(

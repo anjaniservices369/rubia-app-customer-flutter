@@ -13,36 +13,46 @@ class ThemeProvider with ChangeNotifier {
   bool get swithValue => _swithValue;
   // >>> START: setDayMode - sets day mode
   void setDayMode(value) async {
-    ThemeData(colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(background: tWhite));
     tPrimaryColor = Color(0XFFFB6E1F);
     tSecondaryColor = Color(0XFF6B0BE4);
     tBackground = Colors.white;
     tWhite = Colors.white;
-    tBlack = Colors.black;
+    tBlack = tDarkNavyblue;
     _swithValue = value;
     notifyListeners();
   }
   // <<< END: setDayMode - sets day mode
-  ThemeData lightTheme =ThemeData(colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(background: tWhite));
-ThemeData darkTheme = ThemeData(
-        iconTheme:  IconThemeData(
-          color: Colors.white,
-        ),
-        textTheme: TextTheme(
-          displayLarge: TextStyle(color: Colors.white),
-          displayMedium: TextStyle(color: Colors.white),
-          bodyMedium: TextStyle(color: Colors.white),
-          titleMedium: TextStyle(color: Colors.white),
-        ), colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(background: tBlack));
+  ThemeData lightTheme = ThemeData.light().copyWith(
+    iconTheme: IconThemeData(color: tDarkNavyblue),
+    textTheme: ThemeData.light()
+        .textTheme
+        .apply(bodyColor: tDarkNavyblue, displayColor: tDarkNavyblue),
+    colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue)
+        .copyWith(background: tWhite, onSurface: tDarkNavyblue),
+  );
+  ThemeData darkTheme = ThemeData.dark().copyWith(
+    iconTheme: const IconThemeData(color: Colors.white),
+    textTheme: ThemeData.dark()
+        .textTheme
+        .apply(bodyColor: Colors.white, displayColor: Colors.white),
+    colorScheme: ColorScheme.fromSwatch(
+      primarySwatch: Colors.blue,
+      brightness: Brightness.dark,
+    ).copyWith(
+      background: tDarkNavyblue,
+      surface: tDarkNavyblue,
+      onSurface: Colors.white,
+    ),
+  );
   // >>> START: setNightMode - sets night mode
   void setNightMode(value) async {
    darkTheme;
 
     tPrimaryColor = Color(0XFF6B0BE4);
     tSecondaryColor = Color(0XFFFB6E1F);
-    tWhite = Colors.black;
+    tWhite = tDarkNavyblue;
     tBlack = Colors.white;
-    tBackground = Colors.black;
+    tBackground = tDarkNavyblue;
     _swithValue = value;
     notifyListeners();
   }

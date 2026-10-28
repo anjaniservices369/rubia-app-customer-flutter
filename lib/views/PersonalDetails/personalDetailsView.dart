@@ -137,9 +137,13 @@ class _PersonalDetailsState extends State<PersonalDetails> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
+      // errors appear and disappear as the customer types, instead of staying until Next is pressed again
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: SingleChildScrollView(
         child: Padding(
-          padding: MediaQuery.of(context).viewInsets,
+          // above the keyboard, and above the phone's own navigation bar so Next is never hidden behind it
+          padding: MediaQuery.of(context).viewInsets +
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom),
           child: Container(
             color: Colors.transparent,
             child: Container(
@@ -207,7 +211,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                     controller: _firstNameController,
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'first_name_empty'.tr;
+                        return 'Please enter your full name';
                       } else {
                         return null;
                       }
@@ -227,7 +231,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                         fontSize: isTab(context) ? 10.sp : 13.sp,
                         fontWeight: FontWeight.w400),
                   ),
-                  SizedBox(height: 3.h),
+                  SizedBox(height: 1.6.h),
                   Text(
                     'email'.tr,
                     style: TextStyle(
@@ -262,7 +266,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                       }
                     },
                   ),
-                  SizedBox(height: 3.h),
+                  SizedBox(height: 1.6.h),
                   Text(
                     'gender'.tr + ' (optional)',
                     style: TextStyle(
@@ -285,7 +289,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                             ))
                         .toList(),
                   ),
-                  SizedBox(height: 2.4.h),
+                  SizedBox(height: 1.6.h),
                   Text(
                     'Date of birth (optional)',
                     style: TextStyle(
@@ -315,7 +319,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                       ]),
                     ),
                   ),
-                  SizedBox(height: 3.h),
+                  SizedBox(height: 1.6.h),
                   Text(
                     'referral_code'.tr,
                     style: TextStyle(
@@ -342,7 +346,7 @@ class _PersonalDetailsState extends State<PersonalDetails> {
                         fontWeight: FontWeight.w400),
                     validator: (value) => null,
                   ),
-                  SizedBox(height: 3.h),
+                  SizedBox(height: 1.6.h),
                   Center(
                     child: SizedBox(
                       width: isTab(context) ? 50.w : 50.w,

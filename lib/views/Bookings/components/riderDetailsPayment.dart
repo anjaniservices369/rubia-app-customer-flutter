@@ -33,6 +33,7 @@ import '../../../globalWidgets/helpandsos.dart';
 
 import 'finalRideDetailsView/finalRideDetailsView.dart';
 import 'rateRide.dart';
+import '../../../globalWidgets/driverAvatar.dart';
 import 'rideDetailsView/components/rideInfo.dart';
 import '../../bottomNavigation.dart/bottomNavigation.dart';
 
@@ -94,8 +95,8 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
           _timer.cancel();
           final finished = viewbookingDetails;
           if (finished['status'] == STATUS_RIDE_COMPLETED) {
-            // The ride just ended: ask for the rating right away. A rating
-            // opens Home; 'Later' continues to the bill below.
+            // The ride just ended: the bill comes first. The rating is asked only once the driver has confirmed the
+            // payment (immediately if that already happened); a rating opens Home, 'Later' continues to the bill.
             await RideRatingPrompt.promptCompleted(context, finished);
             if (!mounted) return;
           }
@@ -118,7 +119,8 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
 
   // >>> START: fetchAndUpdateOrderDetails - fetches and update order details
   Future<void> fetchAndUpdateOrderDetails() async {
-    var updatedDetails = await UserAPI().viewBooking(context, widget.bookingDetails['id'].toString());
+    // quiet: this runs every few seconds in the background, so a failed check must not pop a message each time
+    var updatedDetails = await UserAPI().viewBooking(context, widget.bookingDetails['id'].toString(), quiet: true);
 
     if (updatedDetails != null && updatedDetails['status'] == 'OK') {
       setState(() {
@@ -403,8 +405,12 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                           SizedBox(
                                             height: 2.h,
                                           ),
-                                          viewbookingDetails['status'] == STATUS_DRIVER_ACCEPTED
-                                              ? Container(
+                                          // From the moment a driver accepts until the ride ends, the customer sees WHO is coming (photo, name) and can
+                                          // call the driver; the status text goes under the card.
+                                          [STATUS_DRIVER_ACCEPTED, STATUS_GO_FOR_PICKUP, STATUS_ARRIVED_LOCATION, STATUS_START_RIDE]
+                                                  .contains(viewbookingDetails['status'])
+                                              ? Column(children: [
+                                                Container(
                                                   padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 1.5.h),
                                                   decoration:
                                                       BoxDecoration(color: tWhite, boxShadow: [tBoxShadow], borderRadius: BorderRadius.circular(8)),
@@ -412,13 +418,9 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                     children: [
                                                       Container(
-                                                        decoration:
-                                                            BoxDecoration(shape: BoxShape.circle, border: Border.all(color: tDarkNavyblue, width: 2)),
-                                                        child: CircleAvatar(
-                                                          backgroundColor: tWhite,
-                                                          backgroundImage: viewbookingDetails['driver_image'] == ""
-                                                              ? NetworkImage(Images.UNKNOWN_IMAGE)
-                                                              : NetworkImage(viewbookingDetails['driver_image']),
+                                                        decoration: const BoxDecoration(),
+                                                        child: DriverAvatar(
+                                                          imageUrl: viewbookingDetails['driver_image']?.toString(),
                                                           radius: isTab(context) ? 20 : 30,
                                                         ),
                                                       ),
@@ -484,30 +486,42 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                                       )
                                                     ],
                                                   ),
-                                                )
+                                                ),
+                                                SizedBox(height: 1.h),
+                                                Text(
+                                                  viewbookingDetails['status'] == STATUS_START_RIDE
+                                                      ? 'Ride in progress'
+                                                      : viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION
+                                                          ? 'Driver has arrived. Share your OTP'
+                                                          : viewbookingDetails['status'] == STATUS_GO_FOR_PICKUP
+                                                              ? 'Driver is on the way'
+                                                              : 'Driver accepted',
+                                                  style: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
+                                                ),
+                                              ])
                                               : viewbookingDetails['status'] == STATUS_START_RIDE
                                                   ? Text(
-                                                      'Ongoing ride'.tr,
+                                                      'Ride in progress',
                                                       style: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
                                                     )
                                                   : viewbookingDetails['status'] == STATUS_GO_FOR_PICKUP
                                                       ? Text(
-                                                          'Driver Arriving Location'.tr,
+                                                          'Driver is on the way',
                                                           style: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
                                                         )
                                                       : viewbookingDetails['status'] == STATUS_WAITING_FOR_DRIVER
                                                           ? Text(
-                                                              'waiting_for_driver'.tr,
+                                                              'Waiting for a driver to accept',
                                                               style: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
                                                             )
                                                           : viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION
                                                               ? Text(
-                                                                  'Arrived the location'.tr,
+                                                                  'Driver has arrived. Share your OTP',
                                                                   style:
                                                                       TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
                                                                 )
                                                               : Text(
-                                                                  'Driver Arriving Location'.tr,
+                                                                  'Driver accepted',
                                                                   style:
                                                                       TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
                                                                 )
@@ -801,7 +815,7 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                         //           // borderRadius: BorderRadius.circular(15),
                                         //           borderRadius: 15.0,
                                         //           color: tPrimaryColor,
-                                        //           textcolor: Colors.black,
+                                        //           textcolor: tDarkNavyblue,
                                         //           child: Text(
                                         //             "Login",
                                         //             style: TextStyle(
@@ -867,6 +881,9 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                   // left: isTab(context)?155:115,
                                   child: Row(
                                     children: [
+                                      // The ride OTP is for the driver at the pickup: it is shown once the driver has arrived (not while the
+                                      // booking is still waiting for a driver or the driver is on the way).
+                                      if (viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION)
                                       Container(
                                         padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 1.5.h),
                                         decoration: BoxDecoration(color: tYellow, boxShadow: [tBoxShadow], borderRadius: BorderRadius.circular(10)),
@@ -882,6 +899,7 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                           ],
                                         ),
                                       ),
+                                      if (viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION)
                                       SizedBox(
                                         width: 3.w,
                                       ),

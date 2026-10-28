@@ -112,7 +112,7 @@ class _FavouriteLocationState extends State<FavouriteLocation> {
                     ? resNOK == 'NOK'
                         ? Align(
                             alignment: Alignment.center,
-                            child: Text('No favourite location found',
+                            child: Text('No favorite location found',
                                 style: GoogleFonts.mulish(
                                     color: tDarkNavyblue,
                                     fontWeight: FontWeight.w500,
@@ -279,6 +279,8 @@ class _FavouriteLocationState extends State<FavouriteLocation> {
                                                                   child:
                                                                       GestureDetector(
                                                                     onTap: () {
+                                                                      // close the Edit / Delete menu first, so it is not left on screen behind the confirmation
+                                                                      Navigator.of(context).pop();
                                                                       showModalBottomSheet(
                                                                         context:
                                                                             context,

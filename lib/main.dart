@@ -25,6 +25,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:base_project_flutter/api_services/pushService.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -44,6 +45,8 @@ FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 // >>> START: main - program start: prepares push, reads the saved login and opens the app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // The screens are designed for portrait; turning the phone sideways made the login and booking screens overflow.
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await SentryFlutter.init(
     (options) {
       options.dsn = const String.fromEnvironment('SENTRY_DSN');
@@ -54,6 +57,7 @@ void main() async {
   );
 }
 
+// >>> START: _startApp - starts app
 Future<void> _startApp() async {
   try {
     await PushService.init();
@@ -88,14 +92,19 @@ Future<void> _startApp() async {
   if (authCode != null) {
     var check = await UserAPI().checkApi(authCode);
     if (check != null && check['status'] == 'OK') {
-      if (check['detail']['email'] != null) {
+      // registration is finished only with a name, an email and the mobile number on the account
+      final registered = ['email', 'first_name', 'contact_no'].every(
+          (k) => (check['detail'][k] ?? '').toString().trim().isNotEmpty);
+      if (registered) {
         checkMail = '2';
         checkAuth = '1';
         checkDetails = check['detail']['personal_details'];
         emergencyContactDetails = check['detail']['user_emergency_contacts'];
         sharedPreferences.setInt('USER_ID', check['detail']['id']);
       } else {
+        // No email yet: the registration (name, email, then two emergency contacts) is not finished. Resume it instead of opening Home.
         checkMail = null;
+        checkDetails = false;
       }
     } else {
       checkAuth = '';
@@ -117,6 +126,7 @@ Future<void> _startApp() async {
     ),
   );
 }
+// <<< END: _startApp - starts app
 // <<< END: main - program start: prepares push, reads the saved login and opens the app
 
 // >>> START: MyApp - the root of the app: themes, languages and the first screen
@@ -182,20 +192,67 @@ class _MyAppState extends State<MyApp> {
           fallbackLocale: const Locale('en', "US"),
           title: 'Rubia User',
           debugShowCheckedModeBanner: false,
+          // Phones on Android 15+ draw apps edge to edge, so the on-screen navigation bar sits on top of the bottom of every
+          // screen (buttons such as Next, Cancel Ride and Later were half hidden). Keep the whole app above it, and take the
+          // same amount off the keyboard inset so screens with a keyboard still fit.
+          builder: (context, child) {
+            final mq = MediaQuery.of(context);
+            final navBar = mq.viewPadding.bottom;
+            if (child == null) return const SizedBox.shrink();
+            // The system navigation bar is white with dark icons, the same surface as the app's own bottom bar, so there is no grey band
+            // between them (the band under the app used to show the window colour).
+            const navStyle = SystemUiOverlayStyle(
+              systemNavigationBarColor: Colors.white,
+              systemNavigationBarIconBrightness: Brightness.dark,
+              systemNavigationBarDividerColor: Colors.white,
+              systemNavigationBarContrastEnforced: false,
+            );
+            if (navBar <= 0) return AnnotatedRegion<SystemUiOverlayStyle>(value: navStyle, child: child);
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: navStyle,
+              child: ColoredBox(
+                color: Colors.white,
+                child: Padding(
+              padding: EdgeInsets.only(bottom: navBar),
+              child: MediaQuery(
+                data: mq.copyWith(
+                  padding: mq.padding.copyWith(bottom: 0),
+                  viewPadding: mq.viewPadding.copyWith(bottom: 0),
+                  viewInsets: mq.viewInsets.copyWith(
+                      bottom: (mq.viewInsets.bottom - navBar) < 0 ? 0 : mq.viewInsets.bottom - navBar),
+                ),
+                child: child,
+              ),
+            ),
+              ),
+            );
+          },
           //suseInheritedMediaQuery: true,
           theme: ThemeData(
             textTheme: GoogleFonts.mulishTextTheme(
               Theme.of(context).textTheme,
-            ),
+            ).apply(bodyColor: tDarkNavyblue, displayColor: tDarkNavyblue),
+            iconTheme: IconThemeData(color: tDarkNavyblue),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: tDarkNavyblue,
+            ).copyWith(onSurface: tDarkNavyblue),
             primarySwatch: Colors.blue,
           ),
           home: ConnectivityWrapper(
             child: AnimatedSplashScreen(
                 duration: 1000,
-                splash: Image.asset(
-                  Images.LOGO,
+                // Same look as the Partner app's splash: the logo centred at a moderate size on white. (The logo image is a wide, tightly
+                // cropped wordmark, so it is given a fixed width; at the old size of 400 it was wider than the screen and off-centre.)
+                splash: Center(
+                  child: SizedBox(
+                    width: 260,
+                    child: Image.asset(
+                      Images.LOGO,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-                splashIconSize: 400,
+                splashIconSize: 300,
                 nextScreen: (widget.checkAuth == null || widget.checkAuth == '')
                     ? LoginScreen()
                     : (widget.checkDetails == false)
@@ -265,6 +322,7 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
    * Applies a connectivity reading, debouncing a drop so a momentary blip (e.g. Wi-Fi reassociating right at
    * app launch) does not flash the full-screen no-internet notice; coming back online is applied immediately.
    */
+  // >>> START: _handleResult - handles result
   void _handleResult(ConnectivityResult result) {
     _offlineDebounce?.cancel();
     if (result != ConnectivityResult.none) {
@@ -275,6 +333,7 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
       if (mounted) setState(() => _connectivityResult = result);
     });
   }
+  // <<< END: _handleResult - handles result
   // <<< END: _handleResult
 
   // >>> START: dispose - runs when the screen closes - frees resources and stops listeners

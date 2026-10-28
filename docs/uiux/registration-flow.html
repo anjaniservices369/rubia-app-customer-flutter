@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142a43">
+  <title>Rubia · Customer registration flow</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #142a43;
+      --navy-soft: #223f5b;
+      --gold: #d5a83a;
+      --orange: #e65a3b;
+      --maroon: #6b263b;
+      --paper: #f5f6f8;
+      --white: #fff;
+      --ink: var(--navy);
+      --muted: #748092;
+      --line: #e5e9ef;
+      --field: #f7f8fa;
+      --success: #318365;
+      --shadow: 0 24px 70px rgb(22 39 61 / 14%);
+      font-family: Mulish, "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 82% 4%, rgb(213 168 58 / 13%), transparent 29rem),
+        var(--paper);
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .workspace {
+      width: min(1120px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--navy);
+      font-size: 15px;
+      font-weight: 850;
+      letter-spacing: -.03em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 12px;
+      color: var(--navy);
+      background: var(--gold);
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .prototype-label {
+      padding: 8px 12px;
+      border: 1px solid #e8dfc7;
+      border-radius: 99px;
+      color: #80621d;
+      background: #fffaf0;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      align-items: center;
+      gap: clamp(44px, 8vw, 112px);
+    }
+
+    .story { max-width: 510px; }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--orange);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 500px;
+      margin: 0;
+      color: var(--navy);
+      font-size: clamp(38px, 5vw, 58px);
+      font-weight: 900;
+      letter-spacing: -.055em;
+      line-height: 1.03;
+    }
+
+    .intro {
+      max-width: 430px;
+      margin: 20px 0 28px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .steps {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .step-link {
+      display: grid;
+      grid-template-columns: 35px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      color: var(--ink);
+      background: transparent;
+      text-align: left;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+
+    .step-link:hover { transform: translateX(3px); }
+    .step-link[aria-current="step"] {
+      border-color: var(--line);
+      background: rgb(255 255 255 / 84%);
+      box-shadow: 0 6px 20px rgb(20 42 67 / 5%);
+    }
+
+    .step-number {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border: 1px solid #dfe4ea;
+      border-radius: 50%;
+      color: var(--muted);
+      background: var(--white);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .step-link[aria-current="step"] .step-number {
+      border-color: var(--navy);
+      color: var(--white);
+      background: var(--navy);
+    }
+
+    .step-link.is-complete .step-number {
+      border-color: #cfe5db;
+      color: var(--success);
+      background: #edf7f2;
+    }
+
+    .step-name {
+      display: block;
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .step-detail {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .optional {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .phone {
+      position: relative;
+      width: 390px;
+      height: 820px;
+      overflow: hidden;
+      border: 8px solid var(--navy);
+      border-radius: 38px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+
+    .phone::before {
+      position: absolute;
+      z-index: 4;
+      top: 8px;
+      left: 50%;
+      width: 94px;
+      height: 22px;
+      border-radius: 99px;
+      background: var(--navy);
+      content: "";
+      transform: translateX(-50%);
+    }
+
+    .phone-top {
+      display: flex;
+      height: 40px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 18px 0;
+      color: var(--navy);
+      background: var(--white);
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    .screen {
+      display: none;
+      height: calc(100% - 40px);
+      overflow-y: auto;
+      padding: 14px 24px 20px;
+      scrollbar-width: thin;
+    }
+
+    .screen.is-active {
+      display: flex;
+      flex-direction: column;
+      animation: enter .24s ease both;
+    }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .screen-head { margin: 6px 0 18px; }
+
+    .screen-kicker {
+      margin: 0 0 8px;
+      color: var(--orange);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 23px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      line-height: 1.2;
+    }
+
+    .screen-copy {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .illustration {
+      position: relative;
+      display: grid;
+      min-height: 188px;
+      place-items: center;
+      overflow: hidden;
+      margin: 0 0 22px;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 70% 25%, rgb(213 168 58 / 23%), transparent 5rem),
+        var(--navy);
+    }
+
+    .illustration::before, .illustration::after {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border: 1px solid rgb(255 255 255 / 12%);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .illustration::before { transform: translate(-45px, 30px); }
+    .illustration::after { width: 210px; height: 210px; transform: translate(60px, -10px); }
+
+    .illustration-mark {
+      z-index: 1;
+      display: grid;
+      width: 76px;
+      height: 76px;
+      place-items: center;
+      border: 7px solid rgb(255 255 255 / 12%);
+      border-radius: 25px;
+      color: var(--navy);
+      background: var(--gold);
+      font-size: 39px;
+      font-weight: 950;
+      transform: rotate(-7deg);
+    }
+
+    .illustration-caption {
+      position: absolute;
+      right: 17px;
+      bottom: 14px;
+      left: 17px;
+      color: #d7e1eb;
+      font-size: 10px;
+      font-weight: 650;
+      text-align: center;
+    }
+
+    .field { display: grid; gap: 7px; margin-bottom: 15px; }
+    .field label, .group-label {
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .field-hint {
+      margin: -2px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .input-wrap {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      gap: 9px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--field);
+      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--gold);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgb(213 168 58 / 15%);
+    }
+
+    .input-wrap input, .input-wrap select {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      color: var(--navy);
+      background: transparent;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .input-wrap input::placeholder { color: #9aa4b1; font-weight: 500; }
+    .prefix { color: var(--navy); font-size: 12px; font-weight: 850; white-space: nowrap; }
+    .input-icon { color: var(--muted); font-size: 16px; }
+
+    .input-wrap.otp {
+      justify-content: center;
+      min-height: 58px;
+      border-color: #d9e0e8;
+      background: var(--white);
+    }
+
+    .input-wrap.otp input {
+      max-width: 212px;
+      font-size: 23px;
+      font-weight: 900;
+      letter-spacing: 22px;
+      text-align: center;
+    }
+
+    .terms {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin: 1px 0 16px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .terms input { width: 16px; height: 16px; accent-color: var(--orange); }
+    .terms a, .text-link { color: var(--orange); font-weight: 850; text-decoration: none; }
+
+    .avatar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 2px 0 16px;
+    }
+
+    .avatar {
+      display: grid;
+      width: 52px;
+      height: 52px;
+      place-items: center;
+      border: 1px dashed #cfd7e1;
+      border-radius: 50%;
+      color: var(--muted);
+      background: var(--field);
+      font-size: 22px;
+    }
+
+    .avatar-copy strong { display: block; color: var(--navy); font-size: 11px; }
+    .avatar-copy span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .choice-chip {
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      color: var(--muted);
+      background: var(--white);
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .choice-chip[aria-pressed="true"] {
+      border-color: var(--navy);
+      color: var(--white);
+      background: var(--navy);
+    }
+
+    .contact-card {
+      margin-bottom: 12px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--white);
+    }
+
+    .contact-heading {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 12px;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .contact-icon {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 9px;
+      color: var(--maroon);
+      background: #f6edf0;
+    }
+
+    .privacy-note {
+      display: flex;
+      gap: 8px;
+      margin: 2px 0 14px;
+      padding: 10px 11px;
+      border-radius: 11px;
+      color: #70562a;
+      background: #fcf7e9;
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .location-art {
+      display: grid;
+      height: 188px;
+      place-items: center;
+      overflow: hidden;
+      margin: 2px 0 18px;
+      border-radius: 20px;
+      background:
+        linear-gradient(25deg, transparent 46%, #fff 47%, #fff 53%, transparent 54%),
+        linear-gradient(110deg, transparent 45%, #fff 46%, #fff 53%, transparent 54%),
+        #e9efed;
+    }
+
+    .pin {
+      position: relative;
+      display: grid;
+      width: 52px;
+      height: 52px;
+      place-items: center;
+      border: 6px solid rgb(255 255 255 / 90%);
+      border-radius: 50% 50% 50% 8px;
+      color: white;
+      background: var(--orange);
+      font-size: 15px;
+      font-weight: 900;
+      box-shadow: 0 8px 22px rgb(20 42 67 / 20%);
+      transform: rotate(-45deg);
+    }
+
+    .pin span { transform: rotate(45deg); }
+
+    .permission-points { display: grid; gap: 10px; margin: 14px 0 18px; }
+    .permission-point { display: flex; align-items: center; gap: 10px; color: var(--ink); font-size: 11px; }
+
+    .check-icon {
+      display: grid;
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--success);
+      background: #eaf5ef;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .success-mark {
+      display: grid;
+      width: 72px;
+      height: 72px;
+      place-items: center;
+      margin: 24px auto 16px;
+      border-radius: 24px;
+      color: var(--white);
+      background: var(--success);
+      font-size: 34px;
+      font-weight: 900;
+      box-shadow: 0 12px 26px rgb(49 131 101 / 22%);
+    }
+
+    .success-copy { text-align: center; }
+
+    .flow-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 14px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 13px;
+      font-size: 12px;
+      font-weight: 900;
+      transition: transform .16s ease, filter .16s ease;
+    }
+
+    .button:hover { filter: brightness(1.04); transform: translateY(-1px); }
+    .button:focus-visible, .step-link:focus-visible, .choice-chip:focus-visible, .text-link:focus-visible {
+      outline: 3px solid rgb(213 168 58 / 55%);
+      outline-offset: 3px;
+    }
+
+    .button-primary {
+      flex: 1;
+      color: var(--white);
+      background: var(--orange);
+      box-shadow: 0 8px 16px rgb(230 90 59 / 18%);
+    }
+
+    .button-secondary {
+      min-width: 84px;
+      padding: 0 15px;
+      border: 1px solid var(--line);
+      color: var(--navy);
+      background: var(--white);
+    }
+
+    .button:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; }
+
+    .resend {
+      margin: 1px 0 4px;
+      color: var(--muted);
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .resend button {
+      padding: 0;
+      border: 0;
+      color: var(--orange);
+      background: transparent;
+      font-size: inherit;
+      font-weight: 850;
+    }
+
+    .screen-note {
+      margin: 12px 0 0;
+      color: #99a2ae;
+      font-size: 9px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .toast {
+      position: absolute;
+      z-index: 10;
+      right: 18px;
+      bottom: 84px;
+      left: 18px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: var(--white);
+      background: var(--navy);
+      box-shadow: 0 10px 26px rgb(20 42 67 / 20%);
+      font-size: 11px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .toast.is-visible { opacity: 1; transform: translateY(0); }
+
+    .prototype-note {
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 780px) {
+      .workspace { width: min(100% - 32px, 420px); padding: 24px 0; }
+      .topbar { margin-bottom: 20px; }
+      .layout { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+      .story { display: contents; }
+      .story .eyebrow, .story h1, .story .intro, .story .steps, .prototype-note { display: none; }
+      .topbar { order: 0; }
+      .phone { width: min(100%, 390px); height: min(820px, calc(100dvh - 106px)); min-height: 650px; margin: 0 auto; }
+    }
+
+    @media (max-width: 390px) {
+      .workspace { width: 100%; padding: 12px 0 0; }
+      .topbar { margin: 0 16px 12px; }
+      .phone { width: 100%; height: calc(100dvh - 70px); min-height: 610px; border-width: 0; border-radius: 28px 28px 0 0; }
+      .phone::before { top: 7px; }
+      .screen { padding-right: 20px; padding-left: 20px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">R</span><span>RUBIA <span style="font-weight:600">/ CUSTOMER APP</span></span></div>
+      <span class="prototype-label">Registration flow</span>
+    </header>
+
+    <div class="layout">
+      <section class="story" aria-labelledby="page-title">
+        <p class="eyebrow">A smooth start, by design</p>
+        <h1 id="page-title">Join Rubia in a few simple steps.</h1>
+        <p class="intro">A phone-first sign-up keeps the essential steps clear, makes optional profile details feel optional, and sets up the safety and location features customers need to book confidently.</p>
+        <ol class="steps" aria-label="Registration steps">
+          <li><button class="step-link" type="button" data-go="0" aria-current="step"><span class="step-number">1</span><span><span class="step-name">Your mobile number</span><span class="step-detail">Start with the number you use every day.</span></span><span></span></button></li>
+          <li><button class="step-link" type="button" data-go="1"><span class="step-number">2</span><span><span class="step-name">Verify your number</span><span class="step-detail">Confirm it with a four-digit code.</span></span><span></span></button></li>
+          <li><button class="step-link" type="button" data-go="2"><span class="step-number">3</span><span><span class="step-name">Your profile</span><span class="step-detail">Name and email are required; the rest is optional.</span></span><span class="optional">OPTIONAL DETAILS</span></button></li>
+          <li><button class="step-link" type="button" data-go="3"><span class="step-number">4</span><span><span class="step-name">Emergency contacts</span><span class="step-detail">Add two people we can reach if needed.</span></span><span></span></button></li>
+          <li><button class="step-link" type="button" data-go="4"><span class="step-number">5</span><span><span class="step-name">Location access</span><span class="step-detail">Make pickup easier with your current location.</span></span><span></span></button></li>
+        </ol>
+        <p class="prototype-note">This interactive prototype follows the current customer-app registration sequence. Form submissions and permission prompts are simulated; no personal information is sent or saved.</p>
+      </section>
+
+      <section class="phone" aria-label="Interactive mobile registration prototype">
+        <div class="phone-top"><span>9:41</span><span aria-hidden="true">● ● ▰</span></div>
+
+        <section class="screen is-active" data-screen="0" aria-labelledby="phone-title">
+          <div class="screen-head">
+            <p class="screen-kicker">Welcome to Rubia</p>
+            <h2 id="phone-title">Welcome! Book a professional service.</h2>
+            <p class="screen-copy">A trusted professional, ready for your next journey.</p>
+          </div>
+          <div class="illustration" aria-hidden="true"><div class="illustration-mark">R</div><span class="illustration-caption">Your journey, with a little more ease.</span></div>
+          <div class="field">
+            <label for="mobile">Mobile number</label>
+            <div class="input-wrap"><span class="prefix">+91</span><span style="color:#d8dee6" aria-hidden="true">|</span><input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="10-digit mobile number" aria-describedby="mobile-hint" required><span class="input-icon" aria-hidden="true">▯</span></div>
+            <p class="field-hint" id="mobile-hint">We’ll send a one-time code to verify your number.</p>
+          </div>
+          <label class="terms"><input id="terms" type="checkbox" required><span>I agree to Rubia’s <a href="#terms-note" class="terms-link">Terms &amp; Conditions</a> and understand how my information is used.</span></label>
+          <div class="flow-footer"><button class="button button-primary" type="button" data-next="0">Continue <span aria-hidden="true">→</span></button></div>
+          <p class="screen-note" id="terms-note">By continuing, you confirm that this number belongs to you.</p>
+        </section>
+
+        <section class="screen" data-screen="1" aria-labelledby="otp-title">
+          <div class="screen-head">
+            <p class="screen-kicker">Step 1 of 4 · Verify</p>
+            <h2 id="otp-title">Check your messages.</h2>
+            <p class="screen-copy">Enter the 4-digit code sent to <strong id="mobile-preview">+91 ••••••••••</strong>.</p>
+          </div>
+          <div class="field" style="margin-top:8px">
+            <label for="otp">Verification code</label>
+            <div class="input-wrap otp"><input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]{4}" aria-label="Four-digit verification code" placeholder="• • • •" required></div>
+            <p class="field-hint">For this UI preview, enter any four digits.</p>
+          </div>
+          <p class="resend">Didn’t get a code? <button type="button" id="resend" disabled>Resend in <span id="resend-count">30</span>s</button></p>
+          <div class="privacy-note"><span aria-hidden="true">⌑</span><span>Your number stays private. We use it to secure your account and keep you updated about your rides.</span></div>
+          <div class="flow-footer"><button class="button button-secondary" type="button" data-back>Back</button><button class="button button-primary" type="button" data-next="1">Verify number <span aria-hidden="true">→</span></button></div>
+          <p class="screen-note">The app can read the code automatically when available.</p>
+        </section>
+
+        <section class="screen" data-screen="2" aria-labelledby="profile-title">
+          <div class="screen-head">
+            <p class="screen-kicker">Step 2 of 4 · Your account</p>
+            <h2 id="profile-title">Let’s set up your profile.</h2>
+            <p class="screen-copy">Just your name and email to get started. The rest can wait.</p>
+          </div>
+          <div class="avatar-row">
+            <div class="avatar" aria-hidden="true">＋</div>
+            <div class="avatar-copy"><strong>Add a profile photo</strong><span>Optional · you can do this later</span></div>
+          </div>
+          <div class="field"><label for="full-name">Full name <span style="color:var(--orange)">*</span></label><div class="input-wrap"><input id="full-name" autocomplete="name" placeholder="Enter your full name" required></div></div>
+          <div class="field"><label for="email">Email address <span style="color:var(--orange)">*</span></label><div class="input-wrap"><input id="email" type="email" autocomplete="email" placeholder="name@example.com" required></div></div>
+          <div class="field">
+            <span class="group-label">Gender <span class="optional">(optional)</span></span>
+            <div class="chip-row" role="group" aria-label="Gender">
+              <button type="button" class="choice-chip" aria-pressed="false">Male</button><button type="button" class="choice-chip" aria-pressed="false">Female</button><button type="button" class="choice-chip" aria-pressed="false">Other</button>
+            </div>
+          </div>
+          <div class="field"><label for="dob">Date of birth <span class="optional">(optional)</span></label><div class="input-wrap"><input id="dob" type="date" autocomplete="bday"><span class="input-icon" aria-hidden="true">▦</span></div></div>
+          <div class="field"><label for="referral">Referral code <span class="optional">(optional)</span></label><div class="input-wrap"><input id="referral" autocomplete="off" placeholder="Enter code, if you have one"></div></div>
+          <div class="flow-footer"><button class="button button-secondary" type="button" data-back>Back</button><button class="button button-primary" type="button" data-next="2">Save and continue <span aria-hidden="true">→</span></button></div>
+          <p class="screen-note">Your profile details are handled securely.</p>
+        </section>
+
+        <section class="screen" data-screen="3" aria-labelledby="contacts-title">
+          <div class="screen-head">
+            <p class="screen-kicker">Step 3 of 4 · Your safety</p>
+            <h2 id="contacts-title">Who should we call?</h2>
+            <p class="screen-copy">Add two emergency contacts. Choose people you trust and who are easy to reach.</p>
+          </div>
+          <div class="contact-card">
+            <div class="contact-heading"><span class="contact-icon" aria-hidden="true">01</span>Emergency contact one</div>
+            <div class="field" style="margin:0"><label for="contact-one">Phone number</label><div class="input-wrap"><span class="prefix">+91</span><input id="contact-one" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" placeholder="10-digit mobile number" required></div></div>
+          </div>
+          <div class="contact-card">
+            <div class="contact-heading"><span class="contact-icon" aria-hidden="true">02</span>Emergency contact two</div>
+            <div class="field" style="margin:0"><label for="contact-two">Phone number</label><div class="input-wrap"><span class="prefix">+91</span><input id="contact-two" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="A different mobile number" required></div></div>
+          </div>
+          <div class="privacy-note"><span aria-hidden="true">♡</span><span>These numbers are for safety support. The two contacts must be different.</span></div>
+          <div class="flow-footer"><button class="button button-secondary" type="button" data-back>Back</button><button class="button button-primary" type="button" data-next="3">Save contacts <span aria-hidden="true">→</span></button></div>
+        </section>
+
+        <section class="screen" data-screen="4" aria-labelledby="location-title">
+          <div class="screen-head">
+            <p class="screen-kicker">Step 4 of 4 · Almost there</p>
+            <h2 id="location-title">Make pickups easier.</h2>
+            <p class="screen-copy">Allow location access so Rubia can find your pickup point and share your trip location.</p>
+          </div>
+          <div class="location-art" aria-hidden="true"><div class="pin"><span>R</span></div></div>
+          <div class="permission-points">
+            <div class="permission-point"><span class="check-icon" aria-hidden="true">✓</span><span>Set your pickup from where you are</span></div>
+            <div class="permission-point"><span class="check-icon" aria-hidden="true">✓</span><span>Make it easier for your driver to find you</span></div>
+            <div class="permission-point"><span class="check-icon" aria-hidden="true">✓</span><span>Share your location while you travel</span></div>
+          </div>
+          <div class="privacy-note"><span aria-hidden="true">⌖</span><span>Your location is used to support pickup and trip features. You can manage app permissions in your device settings.</span></div>
+          <div class="flow-footer"><button class="button button-secondary" type="button" data-back>Back</button><button class="button button-primary" type="button" id="enable-location">Enable location <span aria-hidden="true">→</span></button></div>
+          <p class="screen-note">Preview only: this button simulates the permission being granted.</p>
+        </section>
+
+        <section class="screen" data-screen="5" aria-labelledby="success-title">
+          <div class="screen-head success-copy" style="margin-top:54px">
+            <p class="screen-kicker">You’re all set</p>
+            <div class="success-mark" aria-hidden="true">✓</div>
+            <h2 id="success-title">Welcome to Rubia.</h2>
+            <p class="screen-copy">Your account is ready. Let’s find your next ride.</p>
+          </div>
+          <div class="privacy-note" style="margin-top:25px"><span aria-hidden="true">✦</span><span>Your profile, emergency contacts and location setup are complete.</span></div>
+          <div class="flow-footer"><button class="button button-primary" type="button" id="restart">Back to start <span aria-hidden="true">↺</span></button></div>
+        </section>
+
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const screens = [...document.querySelectorAll("[data-screen]")];
+      const stepLinks = [...document.querySelectorAll(".step-link")];
+      const toast = document.querySelector("#toast");
+      const mobile = document.querySelector("#mobile");
+      const otp = document.querySelector("#otp");
+      const mobilePreview = document.querySelector("#mobile-preview");
+      const resend = document.querySelector("#resend");
+      const resendCount = document.querySelector("#resend-count");
+      let current = 0;
+      let resendTimer;
+      let toastTimer;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("is-visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2600);
+      }
+
+      function startResendTimer() {
+        let remaining = 30;
+        resend.disabled = true;
+        resend.innerHTML = 'Resend in <span id="resend-count">30</span>s';
+        window.clearInterval(resendTimer);
+        resendTimer = window.setInterval(() => {
+          remaining -= 1;
+          const count = document.querySelector("#resend-count");
+          if (count) count.textContent = remaining;
+          if (remaining <= 0) {
+            window.clearInterval(resendTimer);
+            resend.disabled = false;
+            resend.textContent = "Resend code";
+          }
+        }, 1000);
+      }
+
+      function setScreen(index) {
+        current = index;
+        screens.forEach((screen, i) => {
+          const active = i === index;
+          screen.classList.toggle("is-active", active);
+          screen.setAttribute("aria-hidden", String(!active));
+        });
+        stepLinks.forEach((link, i) => {
+          if (i === index) link.setAttribute("aria-current", "step");
+          else link.removeAttribute("aria-current");
+          link.classList.toggle("is-complete", i < index);
+          const number = link.querySelector(".step-number");
+          number.textContent = i < index ? "✓" : String(i + 1);
+        });
+        if (index === 1) {
+          const value = mobile.value.trim();
+          mobilePreview.textContent = `+91 ${value.slice(0, 2)}••••••${value.slice(-2)}`;
+          startResendTimer();
+        }
+        const heading = screens[index].querySelector("h2");
+        if (heading) heading.setAttribute("tabindex", "-1"), heading.focus({ preventScroll: true });
+      }
+
+      function validIndianNumber(input) {
+        return /^[6-9]\d{9}$/.test(input.value.trim());
+      }
+
+      function continueFrom(index) {
+        if (index === 0) {
+          if (!validIndianNumber(mobile)) {
+            mobile.setCustomValidity("Enter a valid 10-digit Indian mobile number.");
+            mobile.reportValidity();
+            mobile.setCustomValidity("");
+            return;
+          }
+          if (!document.querySelector("#terms").checked) {
+            document.querySelector("#terms").reportValidity();
+            return;
+          }
+        }
+        if (index === 1 && !/^\d{4}$/.test(otp.value.trim())) {
+          otp.setCustomValidity("Enter all four digits to continue.");
+          otp.reportValidity();
+          otp.setCustomValidity("");
+          return;
+        }
+        if (index === 2) {
+          const name = document.querySelector("#full-name");
+          const email = document.querySelector("#email");
+          if (!name.value.trim()) {
+            name.setCustomValidity("Enter your full name.");
+            name.reportValidity();
+            name.setCustomValidity("");
+            return;
+          }
+          if (!email.checkValidity()) {
+            email.reportValidity();
+            return;
+          }
+        }
+        if (index === 3) {
+          const first = document.querySelector("#contact-one");
+          const second = document.querySelector("#contact-two");
+          if (!validIndianNumber(first)) {
+            first.setCustomValidity("Enter a valid 10-digit Indian mobile number.");
+            first.reportValidity();
+            first.setCustomValidity("");
+            return;
+          }
+          if (!validIndianNumber(second)) {
+            second.setCustomValidity("Enter a valid 10-digit Indian mobile number.");
+            second.reportValidity();
+            second.setCustomValidity("");
+            return;
+          }
+          if (first.value.trim() === second.value.trim()) {
+            second.setCustomValidity("Use a different number for your second contact.");
+            second.reportValidity();
+            second.setCustomValidity("");
+            return;
+          }
+        }
+        setScreen(index + 1);
+      }
+
+      document.querySelectorAll("[data-next]").forEach(button => {
+        button.addEventListener("click", () => continueFrom(Number(button.dataset.next)));
+      });
+
+      document.querySelectorAll("[data-back]").forEach(button => {
+        button.addEventListener("click", () => setScreen(Math.max(0, current - 1)));
+      });
+
+      stepLinks.forEach(button => {
+        button.addEventListener("click", () => {
+          const target = Number(button.dataset.go);
+          if (target <= current) setScreen(target);
+          else showToast("Complete the current step to continue.");
+        });
+      });
+
+      document.querySelectorAll(".choice-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll(".choice-chip").forEach(item => item.setAttribute("aria-pressed", "false"));
+          chip.setAttribute("aria-pressed", "true");
+        });
+      });
+
+      resend.addEventListener("click", () => {
+        otp.value = "";
+        startResendTimer();
+        showToast("A new code would be sent in the app.");
+      });
+
+      document.querySelector("#enable-location").addEventListener("click", () => {
+        showToast("Location permission granted in this preview.");
+        window.setTimeout(() => setScreen(5), 450);
+      });
+
+      document.querySelector("#restart").addEventListener("click", () => {
+        document.querySelectorAll("input").forEach(input => {
+          if (input.type === "checkbox") input.checked = false;
+          else input.value = "";
+        });
+        document.querySelectorAll(".choice-chip").forEach(chip => chip.setAttribute("aria-pressed", "false"));
+        setScreen(0);
+      });
+
+      mobile.addEventListener("input", () => {
+        mobile.value = mobile.value.replace(/\D/g, "").slice(0, 10);
+      });
+
+      document.querySelectorAll("#otp, #contact-one, #contact-two").forEach(input => {
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/\D/g, "").slice(0, input.id === "otp" ? 4 : 10);
+        });
+      });
+
+      setScreen(0);
+    })();
+  </script>
+</body>
+</html>

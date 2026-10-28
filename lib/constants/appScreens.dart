@@ -24,10 +24,12 @@ class AppScreens {
   /// it can be turned back on without hunting through navigation.
   static const bool showWalletTab = false;
 
+  // >>> START: isLiveService - tells whether live service
   static bool isLiveService(dynamic type) {
     final parsed = type is int ? type : int.tryParse(type?.toString() ?? '');
     if (parsed == null) return false;
     return liveServiceTypes.contains(parsed);
   }
+  // <<< END: isLiveService - tells whether live service
 }
 // <<< END: AppScreens - helper class

@@ -9,4 +9,5 @@ Rubia customer app (Flutter, Android id `com.rubia.user`): customers book a prof
   shorten the booking flow (section 10).
 - Code map and endpoints: [docs/CODE_MAP.md](docs/CODE_MAP.md), [docs/API_ENDPOINTS.md](docs/API_ENDPOINTS.md),
   [docs/STATUS_CODES.md](docs/STATUS_CODES.md).
+- Latest changes (trip notices, route card, live lists, connection messages, which server the app uses): PROJECT_GUIDE.md section 15.
 - Copilot agent for this project: `.github/agents/rubia-customer-app.agent.md`.

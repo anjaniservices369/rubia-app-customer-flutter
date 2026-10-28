@@ -22,6 +22,7 @@ class TaxiServicesPage extends StatefulWidget {
   State<TaxiServicesPage> createState() => _TaxiServicesPageState();
 }
 
+// >>> START: _TaxiServicesPageState - the data and logic behind its screen
 class _TaxiServicesPageState extends State<TaxiServicesPage> {
   bool _checked = false;
 
@@ -36,11 +37,13 @@ class _TaxiServicesPageState extends State<TaxiServicesPage> {
     'car': 'Comfortable ride for up to 4 people',
   };
 
+  // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     super.initState();
     _resumeRide();
   }
+  // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: _resumeRide - reopens a ride in progress, else shows the cards
   Future<void> _resumeRide() async {
@@ -94,7 +97,7 @@ class _TaxiServicesPageState extends State<TaxiServicesPage> {
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 2),
               Text(_about[s.key] ?? '',
-                  style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                  style: const TextStyle(color: tGray, fontSize: 13)),
             ]),
           ),
           Icon(Icons.chevron_right, color: tDarkNavyblue),
@@ -104,6 +107,7 @@ class _TaxiServicesPageState extends State<TaxiServicesPage> {
   }
   // <<< END: _card - one taxi service card
 
+  // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,11 +130,13 @@ class _TaxiServicesPageState extends State<TaxiServicesPage> {
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
               const Text('Book a taxi driver in a bike, auto or car.',
-                  style: TextStyle(color: Colors.black54)),
+                  style: TextStyle(color: tGray)),
               const SizedBox(height: 18),
               ...taxiServices.map(_card),
             ]),
     );
   }
+  // <<< END: build - draws this screen/widget on the display
 }
+// <<< END: _TaxiServicesPageState - the data and logic behind its screen
 // <<< END: TaxiServicesPage - Bike / Auto / Car cards, or the ride in progress

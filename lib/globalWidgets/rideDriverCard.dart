@@ -6,6 +6,7 @@ import 'package:base_project_flutter/constants/constants.dart';
 
 import 'package:base_project_flutter/responsive.dart';
 import 'package:flutter/material.dart';
+import 'driverAvatar.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
@@ -41,19 +42,10 @@ class _RideDriverCardState extends State<RideDriverCard> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              widget.rideDetails['driver_image'] == ''
-                  ? Container()
-                  : Container(
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: tDarkNavyblue, width: 2)),
-                      child: CircleAvatar(
-                        backgroundColor: tWhite,
-                        backgroundImage:
-                            NetworkImage(widget.rideDetails['driver_image']),
-                        radius: isTab(context) ? 20 : 25,
-                      ),
-                    ),
+              DriverAvatar(
+                imageUrl: widget.rideDetails['driver_image']?.toString(),
+                radius: isTab(context) ? 20 : 25,
+              ),
               SizedBox(
                 width: 3.w,
               ),

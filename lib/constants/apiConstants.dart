@@ -17,6 +17,7 @@ const String apiBaseUrl = String.fromEnvironment('API_BASE_URL',
 
 const String SEND_OTP = '/user/send-otp';
 const String LOGOUT = '/user/logout?auth_code=';
+const String DELETE_ACCOUNT = '/user/delete-account?auth_code=';
 const String VERIFY_OTP = '/user/verify-otp';
 const String CHECK_API = '/user/check?auth_code=';
 const String SIGNUP_FORM = 'manager/signup';

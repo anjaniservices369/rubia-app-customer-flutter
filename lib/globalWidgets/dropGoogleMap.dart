@@ -13,6 +13,7 @@ import 'package:base_project_flutter/globalWidgets/googleMapScreen.dart';
 import 'package:base_project_flutter/taxiservices/searchlocation/searchlocation.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_place_picker_mb/google_maps_place_picker.dart';
@@ -21,7 +22,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/constants.dart';
 import '../providers/riderProvider.dart';
-import '../views/RideBooking/selectLocationPage.dart';
 
 // >>> START: DropGoogleMap - screen/widget shell (the visible part is in its State class)
 class DropGoogleMap extends StatefulWidget {
@@ -51,7 +51,10 @@ class _DropGoogleMapState extends State<DropGoogleMap> {
   Widget build(BuildContext context) {
     final tripOptionsProvider = Provider.of<TripOptionsProvider>(context);
 
-    return Scaffold(
+    // A full-screen light map: dark status bar icons, so the clock and battery can be read (they were white on the map).
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
       body: Center(
           child: PlacePicker(
         apiKey: mapKey,
@@ -99,97 +102,22 @@ class _DropGoogleMapState extends State<DropGoogleMap> {
           lat = sharedPreferences.getDouble('droplat')!;
           lng = sharedPreferences.getDouble('droplng')!;
 
-          Map<String, String> param = {
-            'lat': lat.toString(),
-            'lng': lng.toString(),
-          };
-          if (tripOptionsProvider.tripType != TRIP_TYPE_OUTSTATION &&
-              tripOptionsProvider.serviceType == 'DRIVER') {
-            try {
-              var res = await UserAPI().checkBoundary(context, param);
-              if (res['status'] == "OK") {
-                if (tripOptionsProvider.tripType == TRIP_TYPE_INTERCITY) {
-                  if (tripOptionsProvider.selectedCityId ==
-                          res['selected_city_id'] &&
-                      tripOptionsProvider.selectedCityId != 0) {
-                    tripOptionsProvider.setDropLocation(
-                      selectedPlace!.geometry!.location.lat.toString(),
-                      selectedPlace!.geometry!.location.lng.toString(),
-                      selectedPlace!.formattedAddress!,
-                    );
-
-                    tripOptionsProvider.setCityId(res['selected_city_id']);
-                    tripOptionsProvider.setDropCityId(res['selected_city_id']);
-                    tripOptionsProvider.serviceType == 'DRIVER'
-                        ? Twl.forceNavigateTo(context, SelectLocationPage())
-                        : Twl.forceNavigateTo(context, SearchLocation());
-                  } else {
-                    Twl.createAlert(context, "Sorry",
-                        "Pickup and Drop location should be same city");
-                  }
-                } else {}
-              } else {
-                return showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('check_location'.tr),
-                      content: Text(res['error'].toString()),
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text('ok'),
-                          onPressed: () {
-                            Twl.navigateBack(context);
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-            } catch (e) {
-              throw ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                behavior: SnackBarBehavior.floating,
-                content: Text(
-                    'we_are_unable_to_find_your_pin_code_please_drag_the_place_picker'
-                        .tr),
-              ));
-            }
-          } else {
-            var res = await UserAPI().checkBoundary(context, param);
-            if (res['status'] == "OK") {
-              if (tripOptionsProvider.tripType == TRIP_TYPE_OUTSTATION &&
-                  tripOptionsProvider.selectedCityId ==
-                      res['selected_city_id']) {
-                Twl.createAlert(context, "Sorry",
-                    "Pickup and Drop location should be in different cities for Outstation trips");
-              } else {
-                tripOptionsProvider.setDropLocation(
-                  selectedPlace!.geometry!.location.lat.toString(),
-                  selectedPlace!.geometry!.location.lng.toString(),
-                  selectedPlace!.formattedAddress!,
-                );
-
-                tripOptionsProvider.serviceType == 'DRIVER'
-                    ? Twl.forceNavigateTo(context, SelectLocationPage())
-                    : Twl.forceNavigateTo(context, SearchLocation());
-              }
-            } else {
-              tripOptionsProvider.setDropLocation(
-                selectedPlace!.geometry!.location.lat.toString(),
-                selectedPlace!.geometry!.location.lng.toString(),
-                selectedPlace!.formattedAddress!,
-              );
-
-              tripOptionsProvider.serviceType == 'DRIVER'
-                  ? Twl.forceNavigateTo(context, SelectLocationPage())
-                  : Twl.forceNavigateTo(context, SearchLocation());
-            }
-          }
+          // A drop can be anywhere. It is never checked against a city map and never changes the booking's city: the city (and so the
+          // rate card) comes from the pickup, and the server works out in-city or outstation from the trip itself.
+          tripOptionsProvider.setDropLocation(
+            selectedPlace!.geometry!.location.lat.toString(),
+            selectedPlace!.geometry!.location.lng.toString(),
+            selectedPlace!.formattedAddress!,
+          );
+          // The driver booking form is underneath this picker (it was opened on top of it), and it shows the drop from the saved values,
+          // so closing the picker is enough: Back and the arrow return to the same form instead of leaving the booking.
+          tripOptionsProvider.serviceType == 'DRIVER'
+              ? Navigator.of(context).pop()
+              : Twl.forceNavigateTo(context, SearchLocation());
         },
         region: 'in',
       )),
-    );
+    ));
   }
   // <<< END: build - draws this screen/widget on the display
 }

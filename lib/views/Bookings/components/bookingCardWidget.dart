@@ -8,6 +8,7 @@ import 'package:base_project_flutter/views/Bookings/components/rideDetailsView/r
 import 'package:base_project_flutter/views/Bookings/components/ridehistoryDetails.dart';
 import 'package:base_project_flutter/views/Bookings/components/riderDetailsPayment.dart';
 import 'package:flutter/material.dart';
+import 'package:base_project_flutter/globalWidgets/viewDetailsButton.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
 import '../../../api_services/userApi.dart';
@@ -135,7 +136,7 @@ class _BookingCardWidgetState extends State<BookingCardWidget> {
                                 boxShadow: [tBoxShadow],
                                 borderRadius: BorderRadius.circular(6)),
                             child: Text(
-                              getStatus(widget.bookingDetails['status']),
+                              getBookingStatusLabel(widget.bookingDetails),
                               // bookingDetails['otp']
                               // 'Waiting for Driver',
                               style: GoogleFonts.mulish(
@@ -315,16 +316,7 @@ class _BookingCardWidgetState extends State<BookingCardWidget> {
                         SizedBox(
                           height: 0.5.h,
                         ),
-                        Center(
-                          child: Text(
-                            'click here to view full details ---->>',
-                            style: GoogleFonts.mulish(
-                              color: tPrimaryColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: isTab(context) ? 9.sp : 11.sp,
-                            ),
-                          ),
-                        ),
+                        const ViewDetailsButton(),
                       ]),
                     ))),
           )
@@ -352,7 +344,7 @@ getRiderTypeText(riderType) {
 getTripTypeText(int tripType) {
   switch (tripType) {
     case TRIP_TYPE_INTERCITY:
-      return 'InCity';
+      return 'In city';
     case TRIP_TYPE_OUTSTATION:
       return 'Outstation';
     default:
@@ -392,6 +384,19 @@ String getStatus(int status) {
   }
 }
 // <<< END: getStatus - gets status
+
+// >>> START: getBookingStatusLabel - the status text of a booking card
+/// Like getStatus, but a completed ride that is still in Active (not paid yet, or not rated yet) says what is left to do.
+String getBookingStatusLabel(details) {
+  final status = int.tryParse(details['status'].toString()) ?? 0;
+  if (status != STATUS_RIDE_COMPLETED) return getStatus(status);
+  final paid = (int.tryParse(details['payment_status'].toString()) ?? 0) == PAYMENT_STATUS_PAID;
+  // Payment is always cash to the driver: until the driver confirms it, the card just says to pay the driver.
+  if (!paid) return 'Pay the driver';
+  final rated = details['user_my_ratings'] != null && details['user_my_ratings'] != '';
+  return rated ? 'Ride Completed' : 'Rate your driver';
+}
+// <<< END: getBookingStatusLabel - the status text of a booking card
 
 const Color tappbarclr = Color.fromARGB(255, 76, 231, 231);
 const Color tCancelRidebtn = Color(0xFFDC143C);

@@ -133,8 +133,27 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
     }
     // Only the confirm button on the estimate page may save a booking.
     provider.setSaveBooking(false);
-    final res = await provider.getEstimate(context);
+    var res = await provider.getEstimate(context);
     if (!mounted) return;
+    // The base hours differ per trip type (the rate card of each: outstation one-way, outstation round trip, in-city...). An outstation trip
+    // starts at its own base hours; the other types go back to the normal start of 2 hours.
+    final baseHours = (double.tryParse(provider.baseHour.toString()) ?? 0).round();
+    if (res != null && res['status'] == 'OK') {
+      int? start;
+      if (provider.pricedTripType == TRIP_TYPE_OUTSTATION && baseHours > 0 && provider.usageHours != baseHours) {
+        start = baseHours;
+        provider.longDefaultApplied = true;
+      } else if (provider.pricedTripType != TRIP_TYPE_OUTSTATION && provider.longDefaultApplied) {
+        start = 2;
+        provider.longDefaultApplied = false;
+      }
+      if (start != null) {
+        provider.setUsageHours(start);
+        provider.setSaveBooking(false);
+        res = await provider.getEstimate(context);
+        if (!mounted) return;
+      }
+    }
     if (res != null && res['status'] == 'OK') {
       Twl.navigateTo(context, OneWay());
     }
@@ -288,7 +307,7 @@ class _SelectLocationPageState extends State<SelectLocationPage> {
                 // -------------------------------------------------------
                 SizedBox(
                   height: 60,
-                  width: MediaQuery.of(context).size.width / 1.25,
+                  width: MediaQuery.of(context).size.width - 7.w, // the same width as the cards below (3.5.w each side)
                   child: Padding(
                     padding: const EdgeInsets.all(1.0),
                     child: AppBar(

@@ -21,6 +21,7 @@ class MyTransactionsPage extends StatefulWidget {
   State<MyTransactionsPage> createState() => _MyTransactionsPageState();
 }
 
+// >>> START: _MyTransactionsPageState - the data and logic behind its screen
 class _MyTransactionsPageState extends State<MyTransactionsPage> {
   static const Map<String, IconData> _icons = {
     'driver': Icons.drive_eta,
@@ -57,11 +58,13 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
   bool _loading = true;
   bool _failed = false;
 
+  // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     super.initState();
     _load(_month);
   }
+  // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: _load - loads one month
   Future<void> _load(String month) async {
@@ -86,10 +89,12 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
 
   String _rs(num v) => '$currencySymbol${_money.format(v)}';
 
+  // >>> START: _monthName - month name
   String _monthName(String ym, {bool short = false}) {
     final d = DateTime.tryParse('$ym-01') ?? DateTime.now();
     return DateFormat(short ? 'MMM' : 'MMMM yyyy').format(d);
   }
+  // <<< END: _monthName - month name
 
   // >>> START: _monthStrip - the last 6 months, each with its total
   Widget _monthStrip() {
@@ -117,7 +122,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
               decoration: BoxDecoration(
                 color: on ? tPrimaryColor : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: on ? tPrimaryColor : Colors.black12),
+                border: Border.all(color: on ? tPrimaryColor : tDivider),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -129,7 +134,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
                   const SizedBox(height: 2),
                   Text(spent > 0 ? _rs(spent) : '-',
                       style: TextStyle(
-                          color: on ? Colors.white : Colors.black54,
+                          color: on ? Colors.white : tGray,
                           fontSize: 12,
                           fontWeight: FontWeight.w600)),
                 ],
@@ -247,7 +252,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${t['title']}',
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                     color: tDarkNavyblue, fontWeight: FontWeight.w700, fontSize: 14)),
@@ -255,7 +260,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
               Text(subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                  style: const TextStyle(color: tGray, fontSize: 12)),
           ]),
         ),
         const SizedBox(width: 8),
@@ -267,7 +272,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
                   fontSize: 15)),
           if (when != null)
             Text(DateFormat('h:mm a').format(when),
-                style: const TextStyle(color: Colors.black45, fontSize: 11)),
+                style: const TextStyle(color: tGray, fontSize: 11)),
         ]),
       ]),
     );
@@ -297,7 +302,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
           ),
           if (spent > 0)
             Text(_rs(spent),
-                style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600)),
+                style: const TextStyle(color: tGray, fontWeight: FontWeight.w600)),
         ]),
       ));
       out.add(Padding(
@@ -309,6 +314,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
   }
   // <<< END: _dayList - the days of the month, newest first, each with its items
 
+  // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
     final d = _data;
@@ -357,14 +363,14 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
                 Padding(
                   padding: const EdgeInsets.all(40),
                   child: Column(children: [
-                    Icon(Icons.receipt_long_outlined, size: 48, color: Colors.black26),
+                    Icon(Icons.receipt_long_outlined, size: 48, color: tlightGray),
                     const SizedBox(height: 10),
                     Text(
                         _filter == 'all'
                             ? 'No transactions in ${_monthName(_month)}'
                             : 'No ${_filters.firstWhere((f) => f[0] == _filter)[1]} transactions in ${_monthName(_month)}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.black54)),
+                        style: const TextStyle(color: tGray)),
                   ]),
                 )
               else
@@ -375,5 +381,7 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
       ),
     );
   }
+  // <<< END: build - draws this screen/widget on the display
 }
+// <<< END: _MyTransactionsPageState - the data and logic behind its screen
 // <<< END: MyTransactionsPage - month strip, summary and the day-by-day list

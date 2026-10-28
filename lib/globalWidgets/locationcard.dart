@@ -68,7 +68,10 @@ class _LocationCardsState extends State<LocationCards> {
       if (type == 1) {
         Twl.navigateTo(context, PickupAddressGoogleMapPage());
       } else {
-        Twl.forceNavigateTo(context, DropGoogleMap());
+        // driver booking: on top of the form, so Back returns to it
+        provider.serviceType == 'DRIVER'
+            ? Twl.navigateTo(context, DropGoogleMap())
+            : Twl.forceNavigateTo(context, DropGoogleMap());
       }
       return;
     }

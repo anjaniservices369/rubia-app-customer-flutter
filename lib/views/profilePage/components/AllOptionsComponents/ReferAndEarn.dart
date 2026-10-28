@@ -4,13 +4,13 @@
 // =============================================================================
 import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
 import 'package:flutter/material.dart';
+import 'package:base_project_flutter/globalWidgets/legalDocumentPage.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 // import 'package:share_plus/share_plus.dart' import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../api_services/userApi.dart';
 import '../../../../constants/constants.dart';
@@ -259,9 +259,9 @@ class _ReferAndEarnState extends State<ReferAndEarn> {
                                   ),
                                 ),
                                 TextButton.icon(
-                                  onPressed: () => launchUrl(Uri.parse(
-                                    'https://rubia.services/terme%20and%20conditions.html',
-                                  )),
+                                  // the app's own Terms page (the old link had a typo and opened the company home page)
+                                  onPressed: () => LegalDocumentPage.open(
+                                      context, LegalDocumentPage.terms, "Terms and Conditions"),
                                   icon: Icon(
                                     Icons.info_outline,
                                     color: tPrimaryColor,
@@ -287,7 +287,7 @@ class _ReferAndEarnState extends State<ReferAndEarn> {
                                   msg: 'referal_code'.tr,
                                   toastLength: Toast.LENGTH_SHORT,
                                   timeInSecForIosWeb: 1,
-                                  backgroundColor: Colors.black,
+                                  backgroundColor: tDarkNavyblue,
                                   textColor: Colors.white,
                                   fontSize: 16,
                                 );
@@ -372,7 +372,7 @@ class _ReferAndEarnState extends State<ReferAndEarn> {
                                     fontSize: 16,
                                   ),
                                 ),
-                                borderRadius: 14,
+                                borderRadius: 14.0,
                                 borderSide: BorderSide(color: tPrimaryColor),
                                 onTap: (startLoading, stopLoading,
                                     btnState) async {

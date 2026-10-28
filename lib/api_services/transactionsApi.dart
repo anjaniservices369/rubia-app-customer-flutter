@@ -33,6 +33,7 @@ class TransactionsMonth {
 
 // >>> START: TransactionsApi - the transactions request
 class TransactionsApi {
+  // >>> START: fetch - fetch
   /// [month] is "YYYY-MM". Returns null when the request failed (a message has
   /// already been shown by ApiHelper) or the server refused.
   static Future<TransactionsMonth?> fetch(BuildContext context, String month) async {
@@ -44,5 +45,6 @@ class TransactionsApi {
     }
     return null;
   }
+  // <<< END: fetch - fetch
 }
 // <<< END: TransactionsApi - the transactions request

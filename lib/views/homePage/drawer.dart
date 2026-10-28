@@ -58,7 +58,7 @@ class _DarwerState extends State<Darwer> {
                         color: const Color(0xFFF3F6FA),
                         image: new DecorationImage(
                           image: new NetworkImage(
-                              ' https://img.icons8.com/bubbles/50/000000/user.png'),
+                              ' https://img.icons8.com/bubbles/50/144272/user.png'),
                           fit: BoxFit.cover,
                         ),
                         borderRadius: new BorderRadius.all(

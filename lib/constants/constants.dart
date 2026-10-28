@@ -41,14 +41,14 @@ const tDarkGreen = Color(0xff169755);
 const tDate = Color(0XFF935A29);
 const tlocationClr = Color(0XFFA8390E);
 const tBackbtnBoxShadow = BoxShadow(
-  color: Color(0x23000000),
+  color: Color(0x23144272),
   blurRadius: 4,
   offset: Offset(0, 1),
 );
 
 const tFieldColor = Color(0XFFF3F3F5);
 const tBoxShadow = BoxShadow(
-  color: Color(0x23000000),
+  color: Color(0x23144272),
   blurRadius: 4,
   offset: Offset(0, 1),
 );
@@ -88,6 +88,7 @@ const STATUS_GO_FOR_PICKUP = 4; // driver is on the way to the pickup
 const STATUS_ARRIVED_LOCATION = 5; // driver reached the pickup; customer shares the OTP
 const STATUS_START_RIDE = 6; // ride in progress (after the OTP is verified)
 const STATUS_RIDE_COMPLETED = 7; // ride finished, bill ready
+const PAYMENT_STATUS_PAID = 1; // booking.payment_status once the driver has confirmed the payment (collect-cash)
 const STATUS_USER_CANCELLED = 8; // customer cancelled (a fee may apply)
 const STATUS_BOOKING_AUTO_CANCELLED = 9; // system cancelled (no driver / no show)
 const STATUS_DRIVER_CANCELLED = 10; // the driver cancelled

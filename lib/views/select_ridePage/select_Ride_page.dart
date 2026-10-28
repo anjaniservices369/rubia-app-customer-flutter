@@ -517,7 +517,7 @@ class _SelectRidePageState extends State<SelectRidePage>
     //                         color: Colors.green,
     //                       ),
     //                       labelColor: tBlack,
-    //                       unselectedLabelColor: Colors.black,
+    //                       unselectedLabelColor: tDarkNavyblue,
     //                       tabs: [
     //                         Tab(
     //                           icon: Icon(Icons.people),

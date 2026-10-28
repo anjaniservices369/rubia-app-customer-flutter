@@ -29,27 +29,32 @@ class LegalDocumentPage extends StatefulWidget {
   static const String privacy = 'privacy';
   static const String refund = 'refund';
 
+  // >>> START: open - open
   /// Opens the document on top of the current screen.
   static Future<void> open(BuildContext context, String type, String title) {
     return Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => LegalDocumentPage(type: type, title: title)));
   }
+  // <<< END: open - open
 
   @override
   State<LegalDocumentPage> createState() => _LegalDocumentPageState();
 }
 
+// >>> START: _LegalDocumentPageState - the data and logic behind its screen
 class _LegalDocumentPageState extends State<LegalDocumentPage> {
   WebViewController? _controller;
   String? _title;
   String? _error;
   bool _loading = true;
 
+  // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     super.initState();
     _load();
   }
+  // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: _load - fetches the text from the server and shows it
   Future<void> _load() async {
@@ -103,7 +108,7 @@ class _LegalDocumentPageState extends State<LegalDocumentPage> {
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{font-family:sans-serif;color:#1b2a49;background:#ffffff;font-size:16px;line-height:1.65;margin:0;padding:20px 20px 36px;}
+body{font-family:sans-serif;color:#144272;background:#ffffff;font-size:16px;line-height:1.65;margin:0;padding:20px 20px 36px;}
 h1,h2,h3,h4{color:#144272;line-height:1.3;margin-top:1.4em;margin-bottom:.55em;}
 h1{font-size:26px;} h2{font-size:21px;} h3{font-size:18px;} h4{font-size:16px;}
 p,li{margin-top:.45em;margin-bottom:.65em;}
@@ -117,6 +122,7 @@ ${updated.isEmpty ? '' : '<p class="updated">Last updated: $updated</p>'}
 </body></html>''';
   // <<< END: _page - wraps the dashboard text in a readable phone page
 
+  // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -210,5 +216,7 @@ ${updated.isEmpty ? '' : '<p class="updated">Last updated: $updated</p>'}
                 ),
     );
   }
+  // <<< END: build - draws this screen/widget on the display
 }
+// <<< END: _LegalDocumentPageState - the data and logic behind its screen
 // <<< END: LegalDocumentPage - a Terms / Privacy / Refund text loaded from the server

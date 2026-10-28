@@ -8,6 +8,7 @@ import 'package:base_project_flutter/constants/imageConstant.dart';
 import 'package:base_project_flutter/responsive.dart';
 import 'package:base_project_flutter/api_services/otpSmsReader.dart';
 import 'package:base_project_flutter/api_services/pushService.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
@@ -91,8 +92,15 @@ class _OtppageState extends State<Otppage> {
 
   // >>> START: _errorText - chooses the message to show when verification fails
   /// Message for a failed verify/send reply (the reply can be null or not JSON).
-  String _errorText(dynamic res) {
-    if (res is Map && res['error'] != null) return res['error'].toString();
+  String _errorText(dynamic res, {bool verifying = false}) {
+    if (res is Map && res['error'] != null) {
+      final text = res['error'].toString();
+      // The server's short "OTP failed" says nothing to the customer: when checking the typed code it means the code was wrong.
+      if (verifying && text.toLowerCase().contains('otp failed')) {
+        return "That code didn't match. Please check the 4 digits and try again.";
+      }
+      return text;
+    }
     return 'Could not verify the code. Please check your connection and retry.';
   }
   // <<< END: _errorText - chooses the message to show when verification fails
@@ -171,7 +179,9 @@ class _OtppageState extends State<Otppage> {
                 context,
                 BottomNavigation(
                   tabIndexId: 0,
-                  showRegistrationSheet: check['detail']['email'] == null,
+                  // registration is finished only with a name, an email and the mobile number on the account
+                  showRegistrationSheet: ['email', 'first_name', 'contact_no'].any(
+                      (k) => (check['detail'][k] ?? '').toString().trim().isEmpty),
                 ));
             setState(() {
               stopLoading();
@@ -179,13 +189,13 @@ class _OtppageState extends State<Otppage> {
           } else {
             // The profile could not be loaded: show the reason.
             stopLoading();
-            return Twl.createAlert(context, 'Oops', _errorText(res));
+            return Twl.createAlert(context, 'Oops', _errorText(res, verifying: true));
           }
           stopLoading();
         } else {
           // Wrong or expired code (or no connection): show the reason.
           stopLoading();
-          return Twl.createAlert(context, 'Oops', _errorText(res));
+          return Twl.createAlert(context, 'Oops', _errorText(res, verifying: true));
         }
         stopLoading();
       } else {
@@ -357,7 +367,7 @@ class _OtppageState extends State<Otppage> {
                                   activeFillColor:
                                       hasError ? Colors.white : tBackground,
                                 ),
-                                cursorColor: Colors.black,
+                                cursorColor: tDarkNavyblue,
                                 animationDuration: Duration(milliseconds: 300),
                                 enableActiveFill: true,
                                 //errorAnimationController: errorController,
@@ -423,82 +433,32 @@ class _OtppageState extends State<Otppage> {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                ArgonTimerButton(
-                                    elevation: 0,
-                                    initialTimer: 30,
-                                    height: isTab(context) ? 50 : 50,
-                                    width: isTab(context) ? (70) : 70.w,
-                                    borderRadius: isTab(context) ? 90 : 10,
-                                    color: tWhite,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Don\'t receive the code?',
-                                          textAlign: TextAlign.center,
-                                          // maxLines: 1,
-                                          style: GoogleFonts.mulish(
-                                            color: tBlack,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize:
-                                                isTab(context) ? 8.sp : 10.sp,
-                                          ),
-                                        ),
-                                        Text(
-                                          ' Resend (30s)',
-                                          textAlign: TextAlign.center,
-                                          style: GoogleFonts.mulish(
-                                            color: tYellow,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize:
-                                                isTab(context) ? 8.sp : 10.sp,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    loader: (timeLeft) {
-                                      return Text(
-                                        "$timeLeft",
-                                        style: GoogleFonts.mulish(
-                                          color: tBlack,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize:
-                                              isTab(context) ? 8.sp : 12.sp,
-                                        ),
+                                // "Resend code in 25s" while counting, then a tappable "Resend code". One line, never wraps.
+                                _ResendCodeButton(
+                                  seconds: 30,
+                                  onResend: () async {
+                                    Map<String, String> param = {
+                                      'contact_no': widget.mobileNumber.toString(),
+                                    };
+                                    var res = await UserAPI().sendOtp(
+                                      context,
+                                      param,
+                                    );
+                                    if (!mounted) return;
+                                    if (res != null && res['status'] == 'OK') {
+                                      setState(() {
+                                        _sessionCode = res['details']['Details'].toString();
+                                        _otpCodeController.clear();
+                                      });
+                                    } else {
+                                      Twl.createAlert(
+                                        context,
+                                        'Oops',
+                                        _errorText(res),
                                       );
-                                    },
-                                    onTap: (startTimer, btnState) async {
-                                      if (btnState == ArgonButtonState.idle) {
-                                        startTimer(30);
-                                        Map<String, String> param = {
-                                          'contact_no':
-                                              widget.mobileNumber.toString(),
-                                        };
-                                        var res = await UserAPI().sendOtp(
-                                          context,
-                                          param,
-                                        );
-                                        if (!mounted) return;
-                                        if (res != null &&
-                                            res['status'] == 'OK') {
-                                          setState(() {
-                                            _sessionCode = res['details']
-                                                    ['Details']
-                                                .toString();
-                                            _otpCodeController.clear();
-                                          });
-                                        } else {
-                                          Twl.createAlert(
-                                            context,
-                                            'Oops',
-                                            _errorText(res),
-                                          );
-                                        }
-                                      }
-                                    }),
+                                    }
+                                  },
+                                ),
                               ],
                             ),
                             SizedBox(
@@ -546,3 +506,87 @@ class _OtppageState extends State<Otppage> {
   // <<< END: build - draws this screen/widget on the display
 }
 // <<< END: _OtppageState - the data and logic behind its screen
+
+
+// >>> START: _ResendCodeButton - "Resend code in 25s", then a tappable "Resend code"
+/// The resend control of the OTP screen. It counts down [seconds] on one line, then becomes a link that calls [onResend] and starts
+/// counting again. (It replaces a button that shrank to a circle while counting, which wrapped the text.)
+class _ResendCodeButton extends StatefulWidget {
+  const _ResendCodeButton({Key? key, required this.seconds, required this.onResend}) : super(key: key);
+  final int seconds;
+  final Future<void> Function() onResend;
+
+  @override
+  State<_ResendCodeButton> createState() => _ResendCodeButtonState();
+}
+
+// >>> START: _ResendCodeButtonState - the data and logic behind its screen
+class _ResendCodeButtonState extends State<_ResendCodeButton> {
+  late int _left;
+  Timer? _timer;
+
+  // >>> START: initState - runs once when the screen opens - sets up data and listeners
+  @override
+  void initState() {
+    super.initState();
+    _start();
+  }
+  // <<< END: initState - runs once when the screen opens - sets up data and listeners
+
+  // >>> START: _start - start
+  void _start() {
+    _timer?.cancel();
+    setState(() => _left = widget.seconds);
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return;
+      if (_left <= 1) {
+        t.cancel();
+        setState(() => _left = 0);
+      } else {
+        setState(() => _left -= 1);
+      }
+    });
+  }
+  // <<< END: _start - start
+
+  // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+  // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
+
+  // >>> START: build - draws this screen/widget on the display
+  @override
+  Widget build(BuildContext context) {
+    final counting = _left > 0;
+    return GestureDetector(
+      onTap: counting
+          ? null
+          : () async {
+              _start();
+              await widget.onResend();
+            },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Text.rich(
+          TextSpan(
+            style: GoogleFonts.mulish(color: tBlack, fontWeight: FontWeight.w700, fontSize: isTab(context) ? 8.sp : 11.sp),
+            children: [
+              const TextSpan(text: "Don't receive the code? "),
+              TextSpan(
+                text: counting ? 'Resend code in ${_left}s' : 'Resend code',
+                style: TextStyle(color: counting ? tGray : tPrimaryColor),
+              ),
+            ],
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+  // <<< END: build - draws this screen/widget on the display
+}
+// <<< END: _ResendCodeButtonState - the data and logic behind its screen
+// <<< END: _ResendCodeButton - "Resend code in 25s", then a tappable "Resend code"

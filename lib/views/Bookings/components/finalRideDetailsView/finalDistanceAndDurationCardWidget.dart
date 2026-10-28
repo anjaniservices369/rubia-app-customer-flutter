@@ -69,7 +69,7 @@ class FinalDistanceAndDurationCardWidget extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'km ',
+                      ' km',
                       style: GoogleFonts.mulish(
                         color: tDarkNavyblue,
                         fontSize: isTab(context) ? 8.sp : 11.sp,

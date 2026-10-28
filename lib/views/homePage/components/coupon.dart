@@ -199,7 +199,7 @@ class _ApplyCuponPageState extends State<ApplyCoupon> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'T20RIDE',
+                                    'COUPON CODE',
                                     // couponDetails.code.toString(),
                                     style: GoogleFonts.mulish(
                                       color: tDarkNavyblue,
@@ -296,7 +296,7 @@ class _ApplyCuponPageState extends State<ApplyCoupon> {
                                     width:
                                         MediaQuery.of(context).size.width / 1,
                                     child: Text(
-                                      'Use code T20RIDE & get 60% off on ride maximum discount you get ₹100',
+                                      'Enter a coupon code to get a discount on your ride.',
                                       // couponDetails.description.toString(),
                                       maxLines: 5,
                                       overflow: TextOverflow.ellipsis,

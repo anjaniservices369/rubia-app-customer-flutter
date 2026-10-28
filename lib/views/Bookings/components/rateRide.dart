@@ -1,12 +1,15 @@
 // =============================================================================
-// WHAT : Asks the customer to rate the driver as soon as a ride is completed,
-//        wherever they are in the app, instead of leaving the rating to the
-//        Completed rides list.
+// WHAT : Asks the customer to rate the driver once a ride is completed AND paid
+//        (the driver has confirmed the payment in the Partner app), wherever
+//        they are in the app. Until then the customer sees the final bill.
+//        The rating and a written review are COMPULSORY: the sheet cannot be
+//        closed or skipped, and the server refuses a new booking until the
+//        previous ride is rated.
 // NOTES: Server: view-booking (status), add-review. The active booking id is
 //        kept in the phone's saved data ('booking_id', written when the booking
-//        is confirmed). 'ride_resolved_id' remembers the booking that was
-//        already handled, so one ride is never asked twice. 'Later' still
-//        leaves the rating available on the ride's details.
+//        is confirmed). A completed, paid ride is asked again on every check
+//        until it is rated; 'ride_resolved_id' remembers rides that need
+//        nothing more (rated, or cancelled).
 // =============================================================================
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -20,6 +23,7 @@ import '../../../constants/constants.dart';
 import '../../../constants/imageConstant.dart';
 import '../../../globalFuctions/globalFunctions.dart';
 import '../../../globalWidgets/buttonWidget.dart';
+import '../../../globalWidgets/driverAvatar.dart';
 import '../../../responsive.dart';
 
 // >>> START: RideRatingPrompt - finds a completed, unrated ride and asks for the rating
@@ -57,12 +61,18 @@ class RideRatingPrompt {
       final details = res['details'];
       final status = int.tryParse(details['status'].toString()) ?? 0;
       if (!_isFinished(status)) return;
-      // The live ride screen may have handled it while we were waiting.
-      if (id == prefs.getString('ride_resolved_id')) return;
-      await prefs.setString('ride_resolved_id', id);
-      if (status == STATUS_RIDE_COMPLETED && _isUnrated(details) && context.mounted) {
-        await _show(context, details);
+      if (status == STATUS_RIDE_COMPLETED) {
+        // A completed ride waits for the driver to confirm the payment: the customer sees the bill meanwhile, and the
+        // rating is asked on a later tick.
+        if (!_isPaid(details)) return;
+        // Paid but not rated: the rating is compulsory, so it is asked again until it is given.
+        if (_isUnrated(details)) {
+          if (context.mounted) await _show(context, details);
+          return;
+        }
       }
+      // Nothing more to do for this ride (rated, or cancelled).
+      await prefs.setString('ride_resolved_id', id);
     } catch (_) {
       // A failed check is retried on the next tick.
     } finally {
@@ -71,13 +81,28 @@ class RideRatingPrompt {
   }
   // <<< END: check - looks at the active booking and prompts if it just completed
 
+  // >>> START: promptForBooking - asks for the rating of a given ride (the server refused a new booking until it is rated)
+  /// Used when the server answers that the previous ride must be rated first (`rate_booking_id`).
+  static Future<void> promptForBooking(BuildContext context, String bookingId) async {
+    if (_showing || bookingId.isEmpty) return;
+    final res = await UserAPI().viewBookingBG(bookingId);
+    if (res == null || res['status'] != 'OK') return;
+    final details = res['details'];
+    if ((int.tryParse(details['status'].toString()) ?? 0) == STATUS_RIDE_COMPLETED &&
+        _isUnrated(details) &&
+        context.mounted) {
+      await _show(context, details);
+    }
+  }
+  // <<< END: promptForBooking - asks for the rating of a given ride (the server refused a new booking until it is rated)
+
   // >>> START: promptCompleted - asks for the rating of a ride the screen has just seen complete
   /// Used by the live ride screen, which already knows the ride is completed.
   /// Returns after the sheet closes (rated, or 'Later'). A rating sends the
   /// customer Home, which closes the calling screen as well.
   static Future<void> promptCompleted(BuildContext context, details) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('ride_resolved_id', details['id'].toString());
+    // Not paid yet: the bill is shown and the app-wide check asks for the rating when the driver confirms the payment.
+    if (!_isPaid(details)) return;
     // The app-wide check may have opened the sheet a moment earlier: wait for
     // it, so the bill is not pushed on top of an open sheet.
     if (_showing) {
@@ -89,6 +114,11 @@ class RideRatingPrompt {
   }
   // <<< END: promptCompleted - asks for the rating of a ride the screen has just seen complete
 
+  // >>> START: _isPaid - true once the driver has confirmed the payment
+  static bool _isPaid(details) =>
+      (int.tryParse(details['payment_status'].toString()) ?? 0) == PAYMENT_STATUS_PAID;
+  // <<< END: _isPaid - true once the driver has confirmed the payment
+
   // >>> START: _isUnrated - true when the customer has not rated this ride yet
   static bool _isUnrated(details) =>
       details['user_my_ratings'] == null || details['user_my_ratings'] == '';
@@ -98,11 +128,14 @@ class RideRatingPrompt {
   static Future<void> _show(BuildContext context, details) async {
     _showing = true;
     try {
+      // Compulsory: it cannot be dragged away, tapped away or closed with Back.
       _sheet = showModalBottomSheet(
         context: context,
         isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
         backgroundColor: Colors.transparent,
-        builder: (_) => _RateRideSheet(details: details),
+        builder: (_) => PopScope(canPop: false, child: _RateRideSheet(details: details)),
       );
       await _sheet;
     } finally {
@@ -114,7 +147,7 @@ class RideRatingPrompt {
 }
 // <<< END: RideRatingPrompt - finds a completed, unrated ride and asks for the rating
 
-// >>> START: _RateRideSheet - the rating sheet: stars, optional review, Submit / Later
+// >>> START: _RateRideSheet - the rating sheet: stars and a review (both compulsory), Submit
 class _RateRideSheet extends StatefulWidget {
   const _RateRideSheet({Key? key, required this.details}) : super(key: key);
   final details;
@@ -123,22 +156,31 @@ class _RateRideSheet extends StatefulWidget {
   State<_RateRideSheet> createState() => _RateRideSheetState();
 }
 
+// >>> START: _RateRideSheetState - the data and logic behind its screen
 class _RateRideSheetState extends State<_RateRideSheet> {
   double _rating = 5;
   final TextEditingController _review = TextEditingController();
 
+  // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
   @override
   void dispose() {
     _review.dispose();
     super.dispose();
   }
+  // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
 
   // >>> START: _submit - saves the rating, thanks the customer and opens Home
   Future<void> _submit(void Function() stopLoading) async {
+    // Stars and a written review are both compulsory.
+    if (_rating < 1 || _review.text.trim().isEmpty) {
+      stopLoading();
+      Twl.createAlert(context, 'Review needed', 'Please give a rating and write a review for your driver to continue.');
+      return;
+    }
     final res = await UserAPI().myAddReview(context, {
       'booking_id': widget.details['id'].toString(),
       'rating': _rating.toString(),
-      'review': _review.text,
+      'review': _review.text.trim(),
     });
     if (!mounted) return;
     if (res != null && res['status'] == 'OK') {
@@ -158,8 +200,9 @@ class _RateRideSheetState extends State<_RateRideSheet> {
     final driverImage = (widget.details['driver_image'] ?? '').toString();
     return SingleChildScrollView(
       child: Container(
-        // Keep the sheet above the keyboard while writing the review.
-        padding: MediaQuery.of(context).viewInsets,
+        // Keep the sheet above the keyboard while writing the review, and above the phone's own navigation bar.
+        padding: MediaQuery.of(context).viewInsets +
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom),
         decoration: BoxDecoration(
             color: tWhite,
             borderRadius: BorderRadius.only(
@@ -175,12 +218,7 @@ class _RateRideSheetState extends State<_RateRideSheet> {
                       fontWeight: FontWeight.w800,
                       fontSize: isTab(context) ? 12.sp : 18.sp)),
               SizedBox(height: 1.5.h),
-              CircleAvatar(
-                backgroundColor: tWhite,
-                radius: isTab(context) ? 30 : 34,
-                backgroundImage: NetworkImage(
-                    driverImage.isEmpty ? Images.UNKNOWN_IMAGE : driverImage),
-              ),
+              DriverAvatar(imageUrl: driverImage, radius: isTab(context) ? 30 : 34),
               SizedBox(height: 1.h),
               if (driverName.isNotEmpty)
                 Text(driverName,
@@ -217,7 +255,7 @@ class _RateRideSheetState extends State<_RateRideSheet> {
                     fontSize: isTab(context) ? 9.sp : 12.sp,
                     fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                    hintText: 'write_a_review_to'.tr,
+                    hintText: 'write_a_review_to'.tr + ' *',
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     enabledBorder: OutlineInputBorder(
@@ -244,14 +282,12 @@ class _RateRideSheetState extends State<_RateRideSheet> {
                       await _submit(stopLoading);
                     }),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Later'.tr,
-                    style: TextStyle(
-                        color: tGray,
-                        fontSize: isTab(context) ? 9.sp : 13.sp,
-                        fontWeight: FontWeight.w600)),
-              ),
+              SizedBox(height: 1.h),
+              Text('Rating and review are required to continue.',
+                  style: TextStyle(
+                      color: tGray,
+                      fontSize: isTab(context) ? 8.sp : 11.sp,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
         ),
@@ -260,4 +296,5 @@ class _RateRideSheetState extends State<_RateRideSheet> {
   }
   // <<< END: build - draws this screen/widget on the display
 }
-// <<< END: _RateRideSheet - the rating sheet: stars, optional review, Submit / Later
+// <<< END: _RateRideSheetState - the data and logic behind its screen
+// <<< END: _RateRideSheet - the rating sheet: stars and a review (both compulsory), Submit

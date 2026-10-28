@@ -28,6 +28,7 @@ import '../../../periodic_notification/periodic_notification.dart';
 import '../../../providers/riderProvider.dart';
 import '../../../responsive.dart';
 import '../../RideBooking/RideEstimateInfo.dart';
+import '../../Bookings/components/rateRide.dart';
 
 // >>> START: OneWay - screen/widget shell (the visible part is in its State class)
 /// The estimate-and-confirm screen of the Drivers booking. The customer can:
@@ -56,6 +57,23 @@ class _OneWayState extends State<OneWay> {
     return false;
   }
   // <<< END: _back - goes back to the booking screen (or Home if there is none)
+
+  // >>> START: _setHours - changes the trip length (outstation round trip) and asks for the new fare
+  void _setHours(TripOptionsProvider provider, int hours) {
+    final h = hours.clamp(1, provider.maxUsageHours);
+    provider.setUsageHours(h);
+    setState(() => provider.usageHours = h);
+    provider.getEstimate(context);
+  }
+  // <<< END: _setHours - changes the trip length (outstation round trip) and asks for the new fare
+
+  // >>> START: _hoursAsDays - "hours" under the stepper, with the same length in days for a long trip
+  String _hoursAsDays(int hours) {
+    if (hours < 24) return hours == 1 ? 'hour' : 'hours';
+    final d = hours ~/ 24, r = hours % 24;
+    return 'hours  (${d} ${d == 1 ? 'day' : 'days'}${r > 0 ? ' $r hrs' : ''})';
+  }
+  // <<< END: _hoursAsDays - "hours" under the stepper, with the same length in days for a long trip
 
   // >>> START: _confirm - saves the booking on the server
   Future<void> _confirm(TripOptionsProvider provider,
@@ -86,15 +104,22 @@ class _OneWayState extends State<OneWay> {
       // Not saved: a later fare change must not save the booking by accident.
       provider.setSaveBooking(false);
       stopLoading();
+      // the page's own context: the dialog's one is gone once it is closed
+      final pageContext = context;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Text('error'.tr),
-          content: Text('failed_to_save_try_again'.tr),
+          // the server's reason (for example: rate your previous ride first), else the generic text
+          content: Text(provider.lastEstimateError.isNotEmpty ? provider.lastEstimateError : 'failed_to_save_try_again'.tr),
           actions: [
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
+                // an unrated previous ride blocks the booking: ask for its (compulsory) rating now
+                if (provider.lastRateBookingId.isNotEmpty && pageContext.mounted) {
+                  RideRatingPrompt.promptForBooking(pageContext, provider.lastRateBookingId);
+                }
               },
               child: Text('ok'.tr),
             ),
@@ -124,7 +149,7 @@ class _OneWayState extends State<OneWay> {
           backgroundColor: tWhite,
           centerTitle: true,
           title: Text(
-            tripOptionsProvider.riderType == RIDER_TYPE_ONEWAY ? 'one_way'.tr : 'round'.tr,
+            tripOptionsProvider.tripTitle,
             style: GoogleFonts.mulish(
               color: tSecondaryColor,
               fontWeight: FontWeight.w700,
@@ -170,7 +195,7 @@ class _OneWayState extends State<OneWay> {
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 0.w),
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 3.h),
+                    padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 1.4.h),
                     decoration: BoxDecoration(color: tWhite, borderRadius: BorderRadius.circular(10), boxShadow: [tBoxShadow]),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -289,13 +314,31 @@ class _OneWayState extends State<OneWay> {
                     );
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 3.h),
+                    padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 1.4.h),
                     decoration: BoxDecoration(color: tWhite, boxShadow: [tBackbtnBoxShadow], borderRadius: BorderRadiusDirectional.circular(10)),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Column(
                           children: [
+                            // The server priced this as an outstation trip: say so before the customer confirms.
+                            if (tripOptionsProvider.tripNotice.isNotEmpty)
+                              Padding(
+                                padding: EdgeInsets.only(bottom: 1.h),
+                                // The column sits in a row that gives it any width it asks for, so the text is given a limit to wrap at.
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 80.w),
+                                  child: Text(
+                                    tripOptionsProvider.tripNotice,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.mulish(
+                                      color: tDarkOrangeColor,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: isTab(context) ? 7.sp : 12.sp,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             Row(
                               children: [
                                 Text(
@@ -365,7 +408,7 @@ class _OneWayState extends State<OneWay> {
                 // -------------------------------------------------------
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 3.h),
+                  padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 1.4.h),
                   decoration: BoxDecoration(color: tWhite, boxShadow: [tBackbtnBoxShadow], borderRadius: BorderRadiusDirectional.circular(10)),
                   child: Column(
                     children: [
@@ -373,7 +416,7 @@ class _OneWayState extends State<OneWay> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'estimate_usage'.tr,
+                            tripOptionsProvider.isLongTrip ? 'Trip length' : 'estimate_usage'.tr,
                             style: GoogleFonts.mulish(
                               color: tSecondaryColor,
                               fontWeight: FontWeight.w700,
@@ -385,15 +428,65 @@ class _OneWayState extends State<OneWay> {
                       SizedBox(
                         height: 1.h,
                       ),
-                      NumberPicker(
+                      // An outstation round trip can last days, so its length is a minus / plus stepper (1 hour a step, with +12 hours
+                      // buttons, up to 30 days). Everything else is a short hours picker.
+                      tripOptionsProvider.isLongTrip
+                          ? Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      iconSize: 30,
+                                      color: tPrimaryColor,
+                                      icon: const Icon(Icons.remove_circle_outline),
+                                      onPressed: tripOptionsProvider.usageHours <= 1 ? null : () => _setHours(tripOptionsProvider, tripOptionsProvider.usageHours - 1),
+                                    ),
+                                    Container(
+                                      width: 64,
+                                      height: 64,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: tappbarclr)),
+                                      child: Text('${tripOptionsProvider.usageHours}',
+                                          style: TextStyle(color: tDarkNavyblue, fontWeight: FontWeight.w800, fontSize: 18.sp)),
+                                    ),
+                                    IconButton(
+                                      iconSize: 30,
+                                      color: tPrimaryColor,
+                                      icon: const Icon(Icons.add_circle_outline),
+                                      onPressed: tripOptionsProvider.usageHours >= tripOptionsProvider.maxUsageHours ? null : () => _setHours(tripOptionsProvider, tripOptionsProvider.usageHours + 1),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 0.2.h),
+                                Text(
+                                  _hoursAsDays(tripOptionsProvider.usageHours),
+                                  style: GoogleFonts.mulish(color: tSecondaryColor, fontWeight: FontWeight.w700, fontSize: isTab(context) ? 8.sp : 12.sp),
+                                ),
+                                SizedBox(height: 0.6.h),
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    for (final extra in const [12, 24, 168])
+                                      ActionChip(
+                                        label: Text(extra == 168 ? '+7 days' : '+$extra hrs'),
+                                        onPressed: () => _setHours(tripOptionsProvider, tripOptionsProvider.usageHours + extra),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : NumberPicker(
                         haptics: false,
                         textStyle: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w800, fontSize: 15.sp),
                         selectedTextStyle: TextStyle(color: tDarkNavyblue, fontWeight: FontWeight.w800, fontSize: 15.sp),
                         value: tripOptionsProvider.usageHours,
                         minValue: 1,
-                        maxValue: 15,
+                        // days for an outstation round trip, else hours (a driver's duty is at most 12 hours; time beyond what was
+                        // booked is charged hourly when the ride ends)
+                        maxValue: tripOptionsProvider.maxUsageHours,
                         step: 1,
-                        itemHeight: 50,
+                        itemHeight: 42,
                         itemWidth: 50,
                         axis: Axis.horizontal,
                         // Customer picks a different number of hours.
@@ -409,14 +502,24 @@ class _OneWayState extends State<OneWay> {
                           border: Border.all(color: tappbarclr),
                         ),
                       ),
+                      if (!tripOptionsProvider.isLongTrip)
                       Text(
-                        'hours'.tr,
+                        tripOptionsProvider.isLongTrip ? _hoursAsDays(tripOptionsProvider.usageHours) : 'hours'.tr,
                         style: GoogleFonts.mulish(
                           color: tSecondaryColor,
                           fontWeight: FontWeight.w700,
                           fontSize: isTab(context) ? 8.sp : 12.sp,
                         ),
                       ),
+                      if (tripOptionsProvider.isLongTrip)
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                          child: Text(
+                            "After the base hours, every hour is charged by the hour. Driver's food and stay are provided by you.",
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.mulish(color: tGray, fontSize: isTab(context) ? 7.sp : 10.sp, fontWeight: FontWeight.w600),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -540,7 +643,7 @@ class _OneWayState extends State<OneWay> {
                                 ),
                                 borderRadius: 14.0,
                                 color: tPrimaryColor,
-                                textcolor: Colors.black,
+                                textcolor: tDarkNavyblue,
                                 child: Text(
                                   'Confirm_Ride'.tr,
                                   style: TextStyle(
@@ -553,6 +656,7 @@ class _OneWayState extends State<OneWay> {
                           ),
                         ),
                       ),
+                SizedBox(height: 2.h),
               ],
             ),
           ),

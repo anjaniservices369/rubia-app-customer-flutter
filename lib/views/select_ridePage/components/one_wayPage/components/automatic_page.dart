@@ -144,12 +144,25 @@ class _AutomaticTabPageState extends State<AutomaticTabPage> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.network(
-                            vehicle['image'],
-                            scale: isTab(context) ? 2 : 4,
+                          // one box for every picture: the images come in different sizes and backgrounds, and without this the
+                          // chips looked uneven (some picture filled the chip, another sat small inside it)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: SizedBox(
+                                height: 7.h,
+                                width: double.infinity,
+                                child: Image.network(
+                                  vehicle['image'],
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => Icon(Icons.directions_car, color: rides == index ? tWhite : tPrimaryColor),
+                                ),
+                              ),
+                            ),
                           ),
                           SizedBox(
-                            height: 1.h,
+                            height: 0.8.h,
                           ),
                           Text(vehicle['title'],
                               overflow: TextOverflow.ellipsis,

@@ -2,6 +2,9 @@
 // WHAT : List of past bookings with paging.
 // NOTES: Server: list-bookings.
 // =============================================================================
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:base_project_flutter/api_services/userApi.dart';
 import 'package:base_project_flutter/constants/constants.dart';
 import 'package:base_project_flutter/responsive.dart';
@@ -26,7 +29,7 @@ class BookingHistoryList extends StatefulWidget {
 // <<< END: BookingHistoryList - screen/widget shell (the visible part is in its State class)
 
 // >>> START: _BookingHistoryListState - the data and logic behind its screen
-class _BookingHistoryListState extends State<BookingHistoryList> {
+class _BookingHistoryListState extends State<BookingHistoryList> with WidgetsBindingObserver {
   ScrollController _scrollController = ScrollController();
   List<dynamic> bookingsData = [];
   bool showBottomSheet = false;
@@ -37,6 +40,7 @@ class _BookingHistoryListState extends State<BookingHistoryList> {
   UserAPI userAPI = UserAPI();
   bool isLoading = false;
   String errorMessage = '';
+  Timer? _refreshTimer;
 
   // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
@@ -44,17 +48,72 @@ class _BookingHistoryListState extends State<BookingHistoryList> {
     super.initState();
     _scrollController.addListener(_scrollListener);
     fetchBookings(widget.selectedServiceTypeId);
+    // A booking changes while this screen is open (a driver accepts it, the ride starts, it finishes): look again
+    // every few seconds, and when the app comes back to the front.
+    WidgetsBinding.instance.addObserver(this);
+    _refreshTimer = Timer.periodic(const Duration(seconds: 8), (_) => _silentRefresh());
   }
   // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
   @override
   void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();
   }
   // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
+
+  // >>> START: didChangeAppLifecycleState - did change app lifecycle state
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _silentRefresh();
+  }
+  // <<< END: didChangeAppLifecycleState - did change app lifecycle state
+
+  // >>> START: _silentRefresh - reloads the first page without a spinner, and redraws only when something changed
+  /// Skipped while a load is running or when the customer has scrolled on to later pages (their place in the list is kept).
+  Future<void> _silentRefresh() async {
+    if (!mounted || isLoading || page > 1) return;
+    try {
+      final data = await userAPI.fetchBookingsList(
+        context,
+        '0',
+        widget.status.toString(),
+        widget.selectedServiceTypeId.toString(),
+        quiet: true, // a refresh in the background never shows a "check internet" message
+      );
+      if (!mounted || data is! Map) return;
+      // The server answers "No bookings found..." (no list at all) when the last booking in this tab has moved on, e.g. the
+      // only active ride was completed: that is an empty list, not a failure. Any other answer without a list is ignored.
+      final noneLeft = data['status'] == 'NOK' &&
+          data['bookings'] is! List &&
+          data['error'].toString().toLowerCase().contains('no bookings');
+      if (!noneLeft && data['bookings'] is! List) return;
+      final fresh = noneLeft ? <dynamic>[] : List<dynamic>.from(data['bookings']);
+      if (jsonEncode(fresh) == jsonEncode(bookingsData)) return;
+      final pagination = data['pagination'];
+      setState(() {
+        bookingsData = fresh;
+        if (pagination is Map) {
+          totalPages = pagination['total_pages'] ?? totalPages;
+          totalCount = pagination['total_count'] ?? totalCount;
+        }
+        if (noneLeft) {
+          totalPages = 0;
+          totalCount = 0;
+        }
+        page = 1;
+        // Same message as the first load shows for an empty tab.
+        errorMessage = noneLeft ? 'No Bookings found' : '';
+      });
+    } catch (_) {
+      // A missed refresh is fine; the next one tries again.
+    }
+  }
+  // <<< END: _silentRefresh - reloads the first page without a spinner, and redraws only when something changed
 
   // >>> START: _scrollListener - scroll listener
   void _scrollListener() {

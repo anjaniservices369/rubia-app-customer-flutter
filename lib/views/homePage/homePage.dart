@@ -14,6 +14,7 @@ import 'package:base_project_flutter/responsive.dart';
 import 'package:base_project_flutter/views/profilePage/components/notifactionPage.dart';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -41,7 +42,7 @@ class HomePage extends StatefulWidget {
 // <<< END: HomePage - home screen: services, banners and address
 
 // >>> START: _HomePageState - the data and logic behind its screen
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   var homeServicesStatus;
   var checkDetails;
   bool isOthersServiceAvailable = true;
@@ -129,6 +130,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     fetchBanner();
     checkLoginApi();
     fetchServices();
@@ -145,6 +147,34 @@ class _HomePageState extends State<HomePage> {
     });
   }
   // <<< END: initState - runs once when the screen opens - sets up data and listeners
+
+  // >>> START: dispose - runs when the screen closes - frees resources and stops listeners
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  // <<< END: dispose - runs when the screen closes - frees resources and stops listeners
+
+  // Coming back from the phone's settings: look for the location again if it was missing.
+  // >>> START: didChangeAppLifecycleState - did change app lifecycle state
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    final p = Provider.of<TripOptionsProvider>(context, listen: false);
+    if (p.pickupAddress.isEmpty) p.getCurrentLocation(context);
+  }
+  // <<< END: didChangeAppLifecycleState - did change app lifecycle state
+
+  // >>> START: _fixLocation - opens the phone setting that stops the location from being found
+  Future<void> _fixLocation(String issue) async {
+    if (issue == 'off') {
+      await Geolocator.openLocationSettings();
+    } else {
+      await Geolocator.openAppSettings();
+    }
+  }
+  // <<< END: _fixLocation - opens the phone setting that stops the location from being found
 
   // >>> START: build - draws this screen/widget on the display
   @override
@@ -164,14 +194,11 @@ class _HomePageState extends State<HomePage> {
                 : AppBar(
                     backgroundColor: tDarkNavyblue,
                     elevation: 0,
-
                     leading: Builder(builder: (BuildContext context) {
                       return Row(
                         children: [
                           SizedBox(width: 3.w),
                           Container(
-                            // height: 45.0,
-                            // width: 45.0,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                             ),
@@ -184,20 +211,15 @@ class _HomePageState extends State<HomePage> {
                                     backgroundImage: NetworkImage(
                                       checkDetails['selfie'],
                                     ),
-                                    // Old Firebase image links return 404:
-                                    // treat a failed load as "missing".
                                     onBackgroundImageError: (_, __) {},
                                   ),
                           ),
                         ],
                       );
                     }),
-
                     centerTitle: true,
                     title: GestureDetector(
-                        onTap: () async {
-                          // await Twl.navigateTo(context, SelectRidePage());
-                        },
+                        onTap: () async {},
                         child: Container(
                             width: double.infinity,
                             child: Column(
@@ -211,17 +233,24 @@ class _HomePageState extends State<HomePage> {
                                       fontSize: isTab(context) ? 10.sp : 11.sp),
                                 ),
                                 tripOptionsProvider.pickupAddress.isEmpty
-                                    ? Container(
-                                        child: Text(
-                                          'fetching for current location',
-                                          style: TextStyle(
-                                              overflow: TextOverflow.clip,
-                                              color: tWhite,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: isTab(context)
-                                                  ? 10.sp
-                                                  : 12.sp),
-                                          maxLines: 2,
+                                    ? GestureDetector(
+                                        onTap: tripOptionsProvider.locationIssue.isEmpty
+                                            ? null
+                                            : () => _fixLocation(tripOptionsProvider.locationIssue),
+                                        child: Container(
+                                          child: Text(
+                                            tripOptionsProvider.locationIssue == 'off'
+                                                ? 'Location is off. Tap to turn it on'
+                                                : tripOptionsProvider.locationIssue == 'denied'
+                                                    ? 'Location is not allowed. Tap to allow it'
+                                                    : 'fetching for current location',
+                                            style: TextStyle(
+                                                overflow: TextOverflow.clip,
+                                                color: tWhite,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: isTab(context) ? 10.sp : 12.sp),
+                                            maxLines: 2,
+                                          ),
                                         ),
                                       )
                                     : Container(
@@ -232,62 +261,12 @@ class _HomePageState extends State<HomePage> {
                                               overflow: TextOverflow.clip,
                                               color: tWhite,
                                               fontWeight: FontWeight.w700,
-                                              fontSize: isTab(context)
-                                                  ? 10.sp
-                                                  : 12.sp),
+                                              fontSize: isTab(context) ? 10.sp : 12.sp),
                                           maxLines: 2,
                                         ),
                                       ),
                               ],
                             ))),
-                    //   title: GestureDetector(
-                    // // onTap: () async {
-                    // //   Twl.navigateTo(context, GoogleMapPage());
-                    // // },
-                    //         ? Row(
-                    //             children: [
-                    //               Container(
-                    //                 width: 42.w,
-                    //                 child: Text(
-                    //                   addressLine != null ? addressLine: '',
-                    //                   overflow: TextOverflow.ellipsis,
-                    //                   maxLines: 2,
-                    //                   style: TextStyle(
-                    //                     fontSize: isTab(context) ? 8.sp : 10.sp,
-                    //                     fontWeight: FontWeight.w500,
-                    //                     color: tDarkNavyblue,
-                    //                   ),
-                    //                 ),
-                    //               ),
-                    //               // Image.asset(
-                    //               //   Images.DownArrowIcon,
-                    //               //   width: isTab(context) ? 25 : 20,
-                    //               // )
-                    //             ],
-                    //           )
-                    //         : Row(
-                    //             children: [
-                    //               Container(
-                    //                 width: 42.w,
-                    //                 child: Text(
-                    //                   formattedAddress != null
-                    //                       ? formattedAddress: '',
-                    //                   overflow: TextOverflow.ellipsis,
-                    //                   maxLines: 2,
-                    //                   style: TextStyle(
-                    //                       fontSize: 10.sp,
-                    //                       fontWeight: FontWeight.w500,
-                    //                       color: tDarkNavyblue),
-                    //                 ),
-                    //               ),
-                    //               // Image.asset(
-                    //               //   Images.DownArrowIcon,
-                    //               //   width: 20,
-                    //               // )
-                    //             ],
-                    //
-                    //          ))),
-
                     actions: [
                       Padding(
                         padding: EdgeInsets.all(10.0),
@@ -296,19 +275,18 @@ class _HomePageState extends State<HomePage> {
                               Twl.forceNavigateTo(context,
                                   Notifactionpage(boolnotificationPage: true));
                             },
-                            child:
-                                myNotificationProvider.myFavoritesList.isEmpty
-                                    ? Image.asset(
-                                        Images.NOTIFICATION,
-                                        scale: 3,
-                                      )
-                                    : Badge(
-                                        isLabelVisible: true,
-                                        backgroundColor: tRed,
-                                        child: Image.asset(
-                                          Images.NOTIFICATION,
-                                          scale: 3,
-                                        ))),
+                            child: myNotificationProvider.myFavoritesList.isEmpty
+                                ? Image.asset(
+                                    Images.NOTIFICATION,
+                                    scale: 3,
+                                  )
+                                : Badge(
+                                    isLabelVisible: true,
+                                    backgroundColor: tRed,
+                                    child: Image.asset(
+                                      Images.NOTIFICATION,
+                                      scale: 3,
+                                    ))),
                       )
                     ],
                   ),
@@ -329,8 +307,16 @@ class _HomePageState extends State<HomePage> {
                         SizedBox(
                           height: 1.h,
                         ),
-                        SizedBox(
-                          height: 2.h,
+                        // Heading above the service cards (Drivers, Taxi, ...), styled like the other section headings.
+                        Padding(
+                          padding: EdgeInsets.only(left: 15, bottom: 1.h),
+                          child: Text(
+                            'Book a Service',
+                            style: TextStyle(
+                                color: tDarkNavyblue,
+                                fontWeight: FontWeight.w700,
+                                fontSize: isTab(context) ? 10.sp : 14.sp),
+                          ),
                         ),
                         serviceNOK == 'NOK'
                             ? Container(
@@ -345,7 +331,9 @@ class _HomePageState extends State<HomePage> {
                                           crossAxisCount: homeServices.length ==
                                                   1
                                               ? 1
-                                              : isDesktop(context)
+                                              : homeServices.length == 2
+                                                  ? 2
+                                                  : isDesktop(context)
                                                   ? 2
                                                   : 3,
                                           crossAxisSpacing: 4.w,
@@ -354,6 +342,8 @@ class _HomePageState extends State<HomePage> {
                                                       .length ==
                                                   1
                                               ? 2.4
+                                              : homeServices.length == 2
+                                              ? 1.35
                                               : isDesktop(context)
                                                   ? 0.2.w
                                                   : isTab(context)

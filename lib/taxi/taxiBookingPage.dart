@@ -26,6 +26,7 @@ class TaxiBookingPage extends StatefulWidget {
   State<TaxiBookingPage> createState() => _TaxiBookingPageState();
 }
 
+// >>> START: _TaxiBookingPageState - the data and logic behind its screen
 class _TaxiBookingPageState extends State<TaxiBookingPage> {
   // Hyderabad, until the phone's position is known.
   static const LatLng _fallback = LatLng(17.448294, 78.391487);
@@ -41,11 +42,13 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
   // Cash is the payment used for now.
   static const int _paymentCash = 1;
 
+  // >>> START: initState - runs once when the screen opens - sets up data and listeners
   @override
   void initState() {
     super.initState();
     _start();
   }
+  // <<< END: initState - runs once when the screen opens - sets up data and listeners
 
   // >>> START: _start - finds the pickup from GPS
   Future<void> _start() async {
@@ -218,7 +221,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
           color: on ? tPrimaryColor.withOpacity(0.08) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: on ? tPrimaryColor : Colors.black12, width: on ? 2 : 1),
+              color: on ? tPrimaryColor : tDivider, width: on ? 2 : 1),
         ),
         child: Row(children: [
           SizedBox(
@@ -240,7 +243,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 2),
               Text(details,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                  style: const TextStyle(color: tGray, fontSize: 12)),
             ]),
           ),
           Text('$currencySymbol${v.fare.toStringAsFixed(0)}',
@@ -254,6 +257,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
   }
   // <<< END: _vehicleTile - one Bike / Auto / Taxi option
 
+  // >>> START: build - draws this screen/widget on the display
   @override
   Widget build(BuildContext context) {
     final hasTrip = _pickup != null && _drop != null;
@@ -305,7 +309,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                          color: Colors.black12,
+                          color: tDivider,
                           borderRadius: BorderRadius.circular(2))),
                 ),
                 const SizedBox(height: 12),
@@ -363,7 +367,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
                       const Spacer(),
                       Text('Pay the taxi driver at the end of the ride',
                           style: const TextStyle(
-                              color: Colors.black45, fontSize: 12)),
+                              color: tGray, fontSize: 12)),
                     ]),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -398,5 +402,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
       ]),
     );
   }
+  // <<< END: build - draws this screen/widget on the display
 }
+// <<< END: _TaxiBookingPageState - the data and logic behind its screen
 // <<< END: TaxiBookingPage - map with "Where to?", the vehicle list and the Book button

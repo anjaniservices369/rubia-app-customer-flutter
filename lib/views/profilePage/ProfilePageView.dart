@@ -372,12 +372,60 @@ class _ProfilePageViewState extends State<ProfilePageView> {
                   ),
                 ),
               ),
-            )
+            ),
+            SizedBox(height: 1.5.h),
+            // Google Play requires that an account can be deleted from inside the app
+            Center(
+              child: TextButton(
+                onPressed: () => _confirmDeleteAccount(context),
+                child: Text(
+                  'Delete account',
+                  style: GoogleFonts.mulish(color: Colors.red.shade700, fontWeight: FontWeight.w700, fontSize: 12.sp),
+                ),
+              ),
+            ),
+            SizedBox(height: 2.h),
           ]),
         ),
       ),
     );
   }
   // <<< END: build - draws this screen/widget on the display
+
+  // >>> START: _confirmDeleteAccount - asks, then deletes the account and returns to the login screen
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+            'Your account and personal details (name, email, phone number, photo, emergency contacts, saved places) will be deleted for good. Ride and payment records are kept without your identity, as the law requires. This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text('Delete', style: TextStyle(color: Colors.red.shade700))),
+        ],
+      ),
+    );
+    if (sure != true) return;
+    var res = await UserAPI().deleteAccount(context);
+    if (res != null && res['status'] == 'OK') {
+      SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+      await sharedPreferences.clear();
+      Twl.forceNavigateTo(context, LoginScreen());
+    } else {
+      AwesomeDialog(
+          context: context,
+          dialogType: DialogType.error,
+          animType: AnimType.rightSlide,
+          title: 'Could not delete',
+          desc: (res != null && res['error'] != null) ? res['error'].toString() : 'please_retry'.tr,
+          btnOkOnPress: () {},
+          btnOkColor: Colors.red)
+        ..show();
+    }
+  }
+  // <<< END: _confirmDeleteAccount
 }
 // <<< END: _ProfilePageViewState - the data and logic behind its screen

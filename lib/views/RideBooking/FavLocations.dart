@@ -102,6 +102,12 @@ class FavLocation extends StatelessWidget {
                               final latitude = item['latitude'] as String;
                               final longitude = item['logitude'] as String;
                               final address = item['address'] as String;
+                              // A drop can be anywhere: no city check, and it never changes the booking's city.
+                              if (tripOptionsProvider.locationType != 1) {
+                                tripOptionsProvider.setDropLocation(latitude, longitude, address);
+                                Twl.navigateBack(context);
+                                return;
+                              }
                               Map<String, String> param = {
                                 'lat': latitude.toString(),
                                 'lng': longitude.toString(),
@@ -202,10 +208,12 @@ class FavLocation extends StatelessWidget {
                     context,
                     PickupAddressGoogleMapPage(),
                   )
-                : Twl.forceNavigateTo(
-                    context,
-                    DropGoogleMap(),
-                  );
+                : (tripOptionsProvider.serviceType == 'DRIVER'
+                    ? Twl.navigateTo(context, DropGoogleMap())
+                    : Twl.forceNavigateTo(
+                        context,
+                        DropGoogleMap(),
+                      ));
           },
           child: Container(
             height: 6.h,

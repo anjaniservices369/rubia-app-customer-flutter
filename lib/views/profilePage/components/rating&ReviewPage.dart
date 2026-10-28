@@ -592,7 +592,7 @@ class _ReviewsViewState extends State<ReviewsView> {
                                         borderRadius: BorderRadius.circular(12),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Color(0x23000000),
+                                            color: Color(0x23144272),
                                             blurRadius: 4,
                                             offset: Offset(0, 1),
                                           ),

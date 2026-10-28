@@ -100,7 +100,8 @@ class _BottomNavigationState extends State<BottomNavigation>
             backgroundColor: Colors.transparent,
             isDismissible: false,
             enableDrag: false,
-            builder: (context) => PersonalDetails(),
+            // Back must not close it: the name and email are required before the app can be used.
+            builder: (context) => PopScope(canPop: false, child: PersonalDetails()),
           );
         }
       });

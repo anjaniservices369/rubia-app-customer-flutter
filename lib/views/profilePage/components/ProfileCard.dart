@@ -349,12 +349,13 @@ class _ProfileCardState extends State<ProfileCard> {
                             ],
                           ),
                           SizedBox(width: 3.w),
-                          Column(
+                          // Expanded: the name column takes the space left beside the photo (a fixed 56.w overflowed by 18 px).
+                          Expanded(child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                width: 56.w,
+                                width: double.infinity,
                                 child: Text(
                                   // 'Name',
                                   checkDetails['first_name'].toString() +
@@ -417,7 +418,7 @@ class _ProfileCardState extends State<ProfileCard> {
                                 ),
                               ),
                             ],
-                          ),
+                          )),
                         ],
                       )),
                 ),
