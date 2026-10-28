@@ -45,3 +45,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release/
 /android/app/build/
+
+# signing material - never commit
+/jks/
+android/key.properties
+*.jks
+*.keystore
