@@ -209,9 +209,12 @@ class _EmergencyContactState extends State<EmergencyContact> {
                                       child: ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(50),
-                                          child: Image.asset(
-                                            Images.PROFILE_IMAGE,
-                                            scale: isTab(context) ? 5 : 7,
+                                          // a plain person icon: the stock photo made every contact look like the same man
+                                          child: Container(
+                                            width: 14.w,
+                                            height: 14.w,
+                                            color: tPrimaryColor.withOpacity(0.12),
+                                            child: Icon(Icons.person, color: tPrimaryColor, size: 9.w),
                                           )),
                                     ),
                                     SizedBox(width: 4.w), // gap between the photo and the number

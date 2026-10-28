@@ -3,6 +3,7 @@
 // NOTES: Server: update-profile.
 // =============================================================================
 import 'package:base_project_flutter/globalFuctions/globalFunctions.dart';
+import 'package:base_project_flutter/views/bottomNavigation.dart/bottomNavigation.dart';
 import 'package:base_project_flutter/globalWidgets/button.dart';
 import 'package:base_project_flutter/globalWidgets/customTextFiled.dart';
 import 'package:base_project_flutter/responsive.dart';
@@ -752,7 +753,11 @@ class _ProfilePageState extends State<ProfilePage> {
                           var res =
                               await UserAPI().personalDetails(context, param);
                           if (res != null && res['status'] == 'OK') {
-                            Twl.navigateTo(context, ProfilePageView());
+                            // back to the Profile tab inside the tab shell (a bare ProfilePageView had no bottom bar)
+                            Twl.forceNavigateTo(context, BottomNavigation(tabIndexId: 2));
+                          } else {
+                            // a refused update used to do nothing at all
+                            Twl.createAlert(context, 'Oops', '${res?['error'] ?? 'Could not update the profile. Please try again.'}');
                           }
                         }
                         stopLoading();

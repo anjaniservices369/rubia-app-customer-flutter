@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 
 import '../../api_services/transactionsApi.dart';
 import '../../constants/constants.dart';
+import '../../globalWidgets/buttonIconWidget.dart';
 
 // >>> START: MyTransactionsPage - month strip, summary and the day-by-day list
 class MyTransactionsPage extends StatefulWidget {
@@ -321,10 +322,14 @@ class _MyTransactionsPageState extends State<MyTransactionsPage> {
     final days = d == null ? <Widget>[] : _dayList(d);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
+      // the same header as the other Profile screens: yellow bar, white back chip
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: tYellow,
         elevation: 0,
-        iconTheme: IconThemeData(color: tDarkNavyblue),
+        titleSpacing: 7,
+        leading: GestureDetector(
+            onTap: () => Navigator.of(context).maybePop(),
+            child: Padding(padding: const EdgeInsets.all(12), child: BackIconWidget())),
         title: Text('My Transactions',
             style: TextStyle(color: tDarkNavyblue, fontWeight: FontWeight.w800)),
       ),
