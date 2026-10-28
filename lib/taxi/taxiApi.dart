@@ -72,6 +72,9 @@ class TaxiVehicle {
 
 // >>> START: TaxiApi - requests of the taxi flow
 class TaxiApi {
+  /// The server's reason when the last vehicles() call was refused (null otherwise), so the screen can say why instead of "none available".
+  static String? lastVehiclesError;
+
   static const String _activeKey = 'taxi_active_ride';
 
   // >>> START: _auth - the saved login code
@@ -101,6 +104,7 @@ class TaxiApi {
         'vehicle_type': s.vehicleType.toString(),
       });
       final out = <TaxiVehicle>[];
+      lastVehiclesError = (res is Map && res['status'] != 'OK' && res['error'] != null) ? res['error'].toString() : null;
       if (res is Map && res['status'] == 'OK' && res['details'] is List) {
         for (final v in res['details'] as List) {
           if (v is Map) out.add(TaxiVehicle(s, v));

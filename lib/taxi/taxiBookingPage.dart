@@ -130,7 +130,7 @@ class _TaxiBookingPageState extends State<TaxiBookingPage> {
       if (list.isEmpty) {
         _message = (p.pincode.isEmpty || d.pincode.isEmpty)
             ? 'We could not find the pincode of this place. Try another spot.'
-            : 'No ${widget.service.label} rides are available for this route yet.';
+            : (TaxiApi.lastVehiclesError ?? 'No ${widget.service.label} rides are available for this route yet.');
       }
     });
   }

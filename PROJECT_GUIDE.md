@@ -812,6 +812,14 @@ customers booking at the same moment; the same booking accepted twice at once (o
 - **Open:** a working map key (Ola Maps key, or a Google key with Routes and Geocoding enabled) must be set in the dashboard Integrations, or one-way estimates cannot be calculated.
 
 
+### 16.1 Screen-by-screen check (28 Oct 2026, realme phone, test customer 9999900002)
+Checked: Home, Profile and every item under it (My Transactions, Notifications, Favorite Location, Emergency Contact, Refer & Earn, Support, Edit Profile, legal pages, Delete account dialog), Taxi service list, Taxi drop picker and estimate. Fixed:
+- After Edit Profile -> Update the app opened a bare Profile page with no bottom bar; it now returns to the Profile tab (and shows the server's message if the update is refused instead of doing nothing).
+- My Transactions used a white header; it now matches the other Profile screens (yellow bar, white back chip).
+- Emergency contacts showed the same stock photo of a man for everyone; now a person icon.
+- Taxi drop picker had no search although the field said "Search destination"; it now has an address search (the phone's geocoder, no key). The Taxi page also shows the server's real reason (for example the distance could not be calculated) instead of "No rides available".
+- Not fixed (needs the owner): Taxi and Drivers fare estimates fail until a working map key is set in Integrations; Privacy/Terms/Refund pages show "not published yet" until written in the dashboard; headers differ between families of screens (yellow with chip, white with arrow).
+
 ## Live inventory (generated)
 
 <!-- AUTO:inventory:start -->
