@@ -837,6 +837,10 @@ Checked: Home, Profile and every item under it (My Transactions, Notifications, 
 - Static check: `flutter analyze` has 0 errors (279 infos/warnings, mostly unused variables and deprecated calls); the 74 duplicate keys in `translation.dart` differ only in wording.
 - Not fixed (needs the owner): Taxi and Drivers fare estimates fail until a working map key is set in Integrations; Privacy/Terms/Refund pages show "not published yet" until written in the dashboard; headers differ between families of screens (yellow with chip, white with arrow).
 
+### 16.2 Registration retest and end-to-end booking (28 Oct 2026, realme phone, test number 9999900003)
+Checked: login validation (short number, Terms not ticked), OTP, Personal Details (empty fields, bad email, wrong referral code, Back blocked), quitting the app mid-registration and reopening (resumes at the unfinished step), Emergency Contacts (short number, empty, same number twice), then Home and a booking (In city one-way, 2 hours, Rs 819, cash) which shows as Waiting for Driver. To repeat the test, free the number with Profile -> Delete account (an open booking blocks it) and register again; on the dev server a test number accepts only the configured test OTP.
+Notes: the phone's keyboard autofill can fill name and email by itself, which looks like an app bug but is not. The driver side of the ride (accept to Completed lists) still needs a driver login with a selfie on the Partner app.
+
 ## Live inventory (generated)
 
 <!-- AUTO:inventory:start -->
