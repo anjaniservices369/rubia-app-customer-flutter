@@ -820,6 +820,8 @@ Checked: Home, Profile and every item under it (My Transactions, Notifications, 
 - My Transactions used a white header; it now matches the other Profile screens (yellow bar, white back chip).
 - Emergency contacts showed the same stock photo of a man for everyone; now a person icon.
 - Taxi drop picker had no search although the field said "Search destination"; it now has an address search (the phone's geocoder, no key). The Taxi page also shows the server's real reason (for example the distance could not be calculated) instead of "No rides available".
+- Favorite Location -> Add New: tapping Save as favorites first opened an empty sheet holding only one button before the real title sheet. It now opens the title sheet directly, with Home / Office / Other quick-pick chips, and a blank title is refused (it used to be saved as an unnamed favourite).
+- Static check: `flutter analyze` has 0 errors (279 infos/warnings, mostly unused variables and deprecated calls); the 74 duplicate keys in `translation.dart` differ only in wording.
 - Not fixed (needs the owner): Taxi and Drivers fare estimates fail until a working map key is set in Integrations; Privacy/Terms/Refund pages show "not published yet" until written in the dashboard; headers differ between families of screens (yellow with chip, white with arrow).
 
 ## Live inventory (generated)
