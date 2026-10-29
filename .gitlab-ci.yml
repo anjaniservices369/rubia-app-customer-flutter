@@ -40,6 +40,15 @@ variables:
   PUB_CACHE: "$CI_PROJECT_DIR/.pub-cache"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
+# The runner image lacks the Android platform the app compiles against (compileSdk in android/app/build.gradle);
+# Gradle does not fetch it, so install it first. Safe to repeat: sdkmanager skips what is already there.
+.android-sdk: &android_sdk
+  - yes | sdkmanager --licenses > /dev/null 2>&1 || true
+  - |
+    PLATFORM=$(grep -oE 'compileSdk(Version)?[ =]+[0-9]+' android/app/build.gradle | grep -oE '[0-9]+$' | head -1)
+    echo "Installing Android platform $PLATFORM"
+    sdkmanager --list 2>/dev/null | grep -oE "platforms;android-${PLATFORM}[^ ]*" | sort -u | head -1 | xargs -r sdkmanager --install
+
 default:
   cache:
     key:
@@ -64,6 +73,8 @@ verify:
 build:debug-apk:
   stage: build
   needs: ["verify"]
+  before_script:
+    - *android_sdk
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -79,6 +90,7 @@ build:debug-apk:
 .android-signed-build:
   stage: deploy
   before_script:
+    - *android_sdk
     - test -n "$ANDROID_KEYSTORE_BASE64" -a -n "$ANDROID_KEYSTORE_PASSWORD" -a -n "$ANDROID_KEY_ALIAS" -a -n "$ANDROID_KEY_PASSWORD" || { echo "Missing ANDROID_* CI/CD variables"; exit 1; }
     - flutter pub get
     - |
