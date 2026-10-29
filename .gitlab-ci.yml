@@ -85,7 +85,8 @@ build:debug-apk:
     - when: on_success
   script:
     - flutter pub get
-    - flutter build apk --debug
+    # One CPU type is enough for a smoke build; all three fill the free runner's small disk.
+    - flutter build apk --debug --target-platform android-arm64
   artifacts:
     expire_in: 7 days
     paths:
