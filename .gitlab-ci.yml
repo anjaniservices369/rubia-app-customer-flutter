@@ -48,6 +48,10 @@ variables:
     PLATFORM=$(grep -oE 'compileSdk(Version)?[ =]+[0-9]+' android/app/build.gradle | grep -oE '[0-9]+$' | head -1)
     echo "Installing Android platform $PLATFORM"
     sdkmanager --list 2>/dev/null | grep -oE "platforms;android-${PLATFORM}[^ ]*" | sort -u | head -1 | xargs -r sdkmanager --install
+    # The package installs as android-<N>.0 while Gradle looks for android-<N>: make both names resolve.
+    P="$ANDROID_SDK_ROOT/platforms"; [ -n "$ANDROID_SDK_ROOT" ] || P="/opt/android-sdk-linux/platforms"
+    ls "$P" || true
+    [ -d "$P/android-${PLATFORM}.0" ] && [ ! -e "$P/android-${PLATFORM}" ] && ln -s "android-${PLATFORM}.0" "$P/android-${PLATFORM}" && echo "linked android-${PLATFORM}"
 
 default:
   cache:
