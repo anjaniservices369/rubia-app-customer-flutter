@@ -1,6 +1,6 @@
 // =============================================================================
-// WHAT : Profile tab: photo, name and the options list; logout lives here.
-// NOTES: Server: check, logout.
+// WHAT : Profile tab: photo, name, account options, logout and account deletion.
+// NOTES: Server: check, logout, delete-account (after confirmation).
 // =============================================================================
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:base_project_flutter/constants/constants.dart';
@@ -376,11 +376,23 @@ class _ProfilePageViewState extends State<ProfilePageView> {
             SizedBox(height: 1.5.h),
             // Google Play requires that an account can be deleted from inside the app
             Center(
-              child: TextButton(
+              child: ElevatedButton.icon(
                 onPressed: () => _confirmDeleteAccount(context),
-                child: Text(
+                icon: const Icon(Icons.delete_outline),
+                label: Text(
                   'Delete account',
-                  style: GoogleFonts.mulish(color: Colors.red.shade700, fontWeight: FontWeight.w700, fontSize: 12.sp),
+                  style: GoogleFonts.mulish(
+                    fontWeight: FontWeight.w700,
+                    fontSize: isTab(context) ? 12.sp : 12.sp,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade700,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(45.w, 7.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
                 ),
               ),
             ),

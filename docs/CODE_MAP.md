@@ -337,7 +337,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `ProfilePageView.dart` | Profile tab: photo, name and the options list; logout lives here. | Server: check, logout. |
+| `ProfilePageView.dart` | Profile tab: photo, name, account options, logout and account deletion. | Server: check, logout, delete-account (after confirmation). |
 | `RateCard.dart` | INACTIVE: empty file. | **UNUSED: no screen imports it** Safe to delete. |
 
 ## `views/profilePage/components`
