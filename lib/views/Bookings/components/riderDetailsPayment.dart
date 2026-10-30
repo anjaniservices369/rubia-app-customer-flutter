@@ -61,6 +61,11 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
   var resNOK;
   bool isBack = false;
   Timer? timer;
+  bool get _driverHasArrived => viewbookingDetails is Map &&
+      hasDriverArrivedForPickup(
+        status: int.tryParse(viewbookingDetails['status'].toString()) ?? -1,
+        notificationStatus: int.tryParse(viewbookingDetails['notif_status'].toString()) ?? 0,
+      );
   // final InAppReview inAppReview = InAppReview.instance;
   // >>> START: launchURL - launch url
   Future<void> launchURL(String url) async {
@@ -491,7 +496,7 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                                 Text(
                                                   viewbookingDetails['status'] == STATUS_START_RIDE
                                                       ? 'Ride in progress'
-                                                      : viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION
+                                                      : _driverHasArrived
                                                           ? 'Driver has arrived. Share your OTP'
                                                           : viewbookingDetails['status'] == STATUS_GO_FOR_PICKUP
                                                               ? 'Driver is on the way'
@@ -504,6 +509,11 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                                       'Ride in progress',
                                                       style: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
                                                     )
+                                                  : _driverHasArrived
+                                                      ? Text(
+                                                          'Driver has arrived. Share your OTP',
+                                                          style: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
+                                                        )
                                                   : viewbookingDetails['status'] == STATUS_GO_FOR_PICKUP
                                                       ? Text(
                                                           'Driver is on the way',
@@ -514,12 +524,6 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                                               'Waiting for a driver to accept',
                                                               style: TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
                                                             )
-                                                          : viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION
-                                                              ? Text(
-                                                                  'Driver has arrived. Share your OTP',
-                                                                  style:
-                                                                      TextStyle(color: tPrimaryColor, fontWeight: FontWeight.w600, fontSize: 12.sp),
-                                                                )
                                                               : Text(
                                                                   'Driver accepted',
                                                                   style:
@@ -881,9 +885,8 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                   // left: isTab(context)?155:115,
                                   child: Row(
                                     children: [
-                                      // The ride OTP is for the driver at the pickup: it is shown once the driver has arrived (not while the
-                                      // booking is still waiting for a driver or the driver is on the way).
-                                      if (viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION)
+                                      // notify-arrived records arrival before arrived-location verifies the OTP.
+                                      if (_driverHasArrived)
                                       Container(
                                         padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 1.5.h),
                                         decoration: BoxDecoration(color: tYellow, boxShadow: [tBoxShadow], borderRadius: BorderRadius.circular(10)),
@@ -899,7 +902,7 @@ class _RideDetailsPaymentState extends State<RideDetailsPayment> {
                                           ],
                                         ),
                                       ),
-                                      if (viewbookingDetails['status'] == STATUS_ARRIVED_LOCATION)
+                                      if (_driverHasArrived)
                                       SizedBox(
                                         width: 3.w,
                                       ),

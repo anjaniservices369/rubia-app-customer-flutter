@@ -1,7 +1,32 @@
 # Rubia Customer App – Project Guide
 
 Written for: the business owner (no technical background needed) and for new developers who join later.
-Last updated: 26 Oct 2026.
+Last updated: 30 Oct 2026.
+
+## Latest real-device verification - 30 October 2026
+
+The Realme customer app created booking **1698** against an isolated local backend; the updated
+Redmi driver app accepted it before the 11:00 pickup. The driver was verified online, subscribed
+and non-negative in wallet before submission.
+
+- Manual Sedan, in-city round trip, two-hour estimate: **INR 273**.
+- The customer saw no code on acceptance/on-way. After arrival notification, the app displayed
+  the ride code and arrival message. The driver rejected a wrong code and verified the displayed
+  code, advancing directly to the checklist without ride-list re-entry.
+- The driver used actual camera capture/upload for before/after verification, then started and
+  ended the stationary ride through the app. Customer and driver bills agreed on INR 273.
+- After the driver's test cash confirmation, the customer rating sheet appeared; the labelled
+  five-star stationary-test review was saved and the customer returned home.
+- Backend reconciliation confirmed completion/payment, both reviews, all ten required photo
+  slots, driver net INR 234, and a single INR 39 wallet deduction. Dashboard details and both
+  emergency contacts were checked through authenticated HTML responses.
+
+Scope: this was a **stationary test**, not real driving or actual cash collection. Photo
+capture/upload was exercised, but vehicle-condition/photo-content compliance was not certified.
+No live SMS, push or payment-gateway delivery was tested. The repeat cycle reused registered
+test accounts; the earlier registration used synthetic identity/profile fixtures. Two focused
+arrival-condition tests cover the OTP visibility rule. Production was untouched; both apps
+and the local server were stopped and test forwarding removed afterward.
 
 ---
 
@@ -46,8 +71,10 @@ There are **three separate apps / systems** that work together:
 6. **Estimate and confirm** (one screen) → the server calculates the price (e.g. ₹609 for 2 hours).
    Hours and coupons can be changed; **Confirm Ride** saves the booking: *"Your order has been
    placed"*.
-7. **Waiting for driver** → a driver accepts. The customer sees the driver and a 4-digit **ride OTP**.
-8. **Ride** → the driver arrives, the customer shares the OTP, the ride starts and ends.
+7. **Waiting for driver** → a driver accepts. The customer sees the driver; the ride OTP remains hidden.
+8. **Ride** → once the driver reaches pickup and notifies arrival (`status=4`, `notif_status=1`), the customer
+   sees "Driver has arrived. Share your OTP" and the 4-digit ride code. `arrived-location` verifies it
+   (`status=5`); then the ride can start and end. Going for pickup alone does not reveal the code.
 9. **Bill first, then rate the driver once the driver has confirmed the payment** → when the ride
     ends the customer sees the final bill, with a note to pay the driver (it disappears once paid).
     When the driver confirms the payment in the Partner app (`collect-cash`, which sets
@@ -236,7 +263,7 @@ Drivers → pick drop → estimate → confirm → My Bookings → cancel.
    the terms box → OTP (the 4th digit submits it by itself) → Name, email and an optional referral
    code → emergency contacts (two numbers) → Home → Drivers → one-way, in-city → pick the drop
    on the map → Automatic, Sedan → Next → today/tomorrow and time → OK → estimate → Next →
-   Confirm Ride. The booking shows "Waiting for Driver" with a 4-digit ride OTP.
+   Confirm Ride. The booking shows "Waiting for Driver"; its 4-digit ride OTP appears only after pickup arrival.
 5. **Driver:** the Partner app was not used. The driver was played through its API
    (`/api/driver/…`): `driver-status` (status=1), `accept-ride`, `go-for-pickup`,
    `arrived-location` (send the ride OTP), `start-ride`, `complete-ride`.

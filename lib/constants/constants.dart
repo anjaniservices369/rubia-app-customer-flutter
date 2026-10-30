@@ -94,6 +94,12 @@ const STATUS_BOOKING_AUTO_CANCELLED = 9; // system cancelled (no driver / no sho
 const STATUS_DRIVER_CANCELLED = 10; // the driver cancelled
 const STATUS_CANCELLED = 11;
 const STATUS_ACCEPTED_RIDES = 12;
+
+bool hasDriverArrivedForPickup({required int status, required int notificationStatus}) {
+  return status == STATUS_ARRIVED_LOCATION ||
+      (status == STATUS_GO_FOR_PICKUP && notificationStatus == 1);
+}
+
 // service constants
 const DRIVER = 1; // service tiles on the home screen: Driver (live)
 const TAXI = 2; // Taxi (built, shown as 'Coming soon')
