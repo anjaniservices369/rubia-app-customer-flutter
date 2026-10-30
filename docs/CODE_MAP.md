@@ -319,7 +319,7 @@ Files marked **INACTIVE** are fully commented out and can be deleted.
 
 | File | What it does | Notes |
 |---|---|---|
-| `loginPage.dart` | Login screen, the first screen for a signed-out customer: logo and welcome line, mobile number and terms; the server sends an OTP SMS. | On success moves to the OTP screen. (It replaces the old separate "Get Started" welcome screen.) |
+| `loginPage.dart` | Register / Login screen, the first screen for a signed-out customer (new and returning customers use it): logo and welcome line, a "Register / Login" heading, mobile number and terms; the server sends an OTP SMS. | On success moves to the OTP screen. (It replaces the old separate "Get Started" welcome screen.) |
 
 ## `views/orderTracking`
 

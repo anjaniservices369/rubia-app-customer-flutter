@@ -23,8 +23,9 @@ device permissions, or connect to the app's APIs.
 Open [service-booking-flow.html](service-booking-flow.html) in a browser and
 use the phone preview or the journey controls to explore:
 
-1. **Login:** enter a valid 10-digit Indian mobile number, accept the terms,
-   and continue to OTP. The preview accepts any four-digit code.
+1. **Register / Login:** the first screen after the splash, used by new and
+   returning customers; enter a valid 10-digit Indian mobile number, accept the
+   terms, and continue to OTP. The preview accepts any four-digit code.
 2. **Home:** see the pickup location, Driver and Taxi service cards, a
    promotional Driver banner, and the Home/Profile bottom navigation.
 3. **Driver booking:** choose one-way or round trip, in-city or out-station,

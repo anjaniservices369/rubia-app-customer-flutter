@@ -56,8 +56,9 @@ There are **three separate apps / systems** that work together:
 
 ## 2. The customer's journey (in plain words)
 
-1. **Login** → the first screen: logo, the “Welcome! Book a professional service.” tagline,
-   mobile number and the terms tick.
+1. **Register / Login** → the first screen after the splash: logo, the “Welcome! Book a professional
+   service.” tagline, mobile number and the terms tick. New and returning customers use the same
+   screen; its heading reads **Register / Login** and its button reads **Login**.
    The server sends a 4-digit **OTP by SMS**.
 2. **OTP** → the app reads the SMS automatically and signs the customer in.
 3. **Registration (first time only)** → on top of Home: **name, email and an optional referral
@@ -571,7 +572,7 @@ Setting up the database and backend for this is in section 7.2.
 
 | # | Screen | What the customer does | Code |
 |---|---|---|---|
-| 1 | **Login** (first screen; the old separate "Get Started" welcome screen is gone) | Logo and “Welcome! Book a professional service.”, mobile number, tick the terms, **Login**. | `logiPage/loginPage.dart` |
+| 1 | **Register / Login** (first screen after the splash; the heading says Register / Login for new and returning customers alike; the old separate "Get Started" welcome screen is gone) | Logo and “Welcome! Book a professional service.”, mobile number, tick the terms, **Login**. | `logiPage/loginPage.dart` |
 | 2 | **OTP** | Enters the 4 digits (read from the SMS; the 4th digit submits by itself). | `otpPage/otpPage.dart` |
 | 3 | **About you** (sheet over Home, cannot be dismissed) | **Full name and email are required.** Optional: a **photo** (camera or gallery; uploaded straight away), **gender** (Male / Female / Other chips), **date of birth** (calendar, saved as dd-MM-yyyy like the Profile screen) and a **referral code**. A wrong referral code shows "Referral code does not exist" and the sheet stays, so it can be fixed or cleared. A photo that fails to upload only shows a message (it can be added later in Profile). | `PersonalDetails/personalDetailsView.dart` |
 | 4 | **Emergency contacts** (full screen) | Two phone numbers, required (used by SOS). No back arrow; Back asks to exit the app. | `EmergencyContact/EmergencyContacts.dart` |

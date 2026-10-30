@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Align(
                               alignment: Alignment.topLeft,
                               child: Text(
-                                'login'.tr,
+                                'Register / Login',
                                 style: GoogleFonts.mulish(
                                   color: tDarkNavyblue,
                                   fontWeight: FontWeight.w600,
